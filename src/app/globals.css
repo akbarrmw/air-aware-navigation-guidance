@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-aqi-good: #10b981;
+    --color-aqi-moderate: #f59e0b;
+    --color-aqi-sensitive: #f97316;
+    --color-aqi-unhealthy: #ef4444;
+    --color-aqi-very-unhealthy: #8b5cf6;
+    --color-aqi-hazardous: #7f1d1d;
+  }
+
+  body {
+    background-color: #0b1120;
+    color: #f8fafc;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+}
