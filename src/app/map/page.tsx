@@ -1,115 +1,233 @@
+/**
+ * @file page.tsx
+ * @description Halaman Peta Kualitas Udara Kota P-02 untuk AANG.
+ * Menampilkan sebaran stasiun pemantau, panel detail polutan, dan integrasi peta interaktif (TC-33).
+ * 
+ * @author Person 3 (Database, Auth, & History Services)
+ * @module app/map/page
+ * @see CODE_SPEC_AANG.md Bagian 8.1 & FR-02, TC-33
+ */
+
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { StationData } from '@/types/air-quality';
-import { ApiResponse } from '@/types/api';
+import React, { useState } from 'react';
+import {
+  MapPin,
+  Search,
+  AlertTriangle,
+  RotateCw,
+  Info,
+} from 'lucide-react';
+import { useStations } from '@/components/air-map/useStations';
+import { StationDetailPanel } from '@/components/air-map/StationDetailPanel';
+import { AirQualityMap } from '@/components/air-map/AirQualityMap';
 
-export default function MapPage() {
-  const [stations, setStations] = useState<StationData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedStation, setSelectedStation] = useState<StationData | null>(null);
+export default function AirQualityMapPage() {
+  const {
+    stations,
+    loading,
+    error,
+    selectedStation,
+    setSelectedStation,
+    fetchStations,
+    dataMode,
+  } = useStations();
 
-  useEffect(() => {
-    async function loadStations() {
-      try {
-        const res = await fetch('/api/air-quality/stations');
-        const json: ApiResponse<StationData[]> = await res.json();
-        if (json.success && json.data) {
-          setStations(json.data);
-          setSelectedStation(json.data[0] || null);
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadStations();
-  }, []);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<'list' | 'detail'>('list');
+
+  // Filter stasiun berdasarkan pencarian teks
+  const filteredStations = stations.filter((st) =>
+    st.stationName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const isSimulation = dataMode === 'simulation';
 
   return (
-    <div className="flex flex-col md:flex-row h-[calc(100vh-4rem)] bg-slate-950 text-white">
-      {/* Side Panel */}
-      <div className="w-full md:w-96 bg-slate-900 border-r border-slate-800 p-6 overflow-y-auto">
-        <h1 className="text-xl font-bold text-emerald-400 mb-1">Stasiun Kualitas Udara</h1>
-        <p className="text-xs text-slate-400 mb-6">Kota Pilot: Semarang dan sekitarnya</p>
-
-        {loading ? (
-          <div className="text-center py-12 text-slate-500 text-sm animate-pulse">
-            Memuat data stasiun pemantau...
+    <div className="flex flex-col h-[calc(100vh-4rem)] bg-slate-950 text-white overflow-hidden">
+      {/* Simulation Banner Notice if active */}
+      {isSimulation && (
+        <div className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-2 text-xs text-amber-300 flex items-center justify-between gap-2 z-30 shrink-0">
+          <div className="flex items-center gap-2">
+            <Info className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>
+              <strong>Mode Simulasi Aktif:</strong> Menampilkan data sintetis stasiun pilot
+              Semarang untuk pengujian reliabilitas & demo juri.
+            </span>
           </div>
-        ) : (
-          <div className="space-y-3">
-            {stations.map((st) => (
-              <div
-                key={st.stationId}
-                onClick={() => setSelectedStation(st)}
-                className={`p-4 rounded-xl border cursor-pointer transition ${
-                  selectedStation?.stationId === st.stationId
-                    ? 'bg-slate-800 border-emerald-500 shadow-md'
-                    : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+          <span className="hidden sm:inline-block px-2 py-0.5 rounded bg-amber-500/20 text-[10px] font-bold">
+            DATA_MODE=simulation
+          </span>
+        </div>
+      )}
+
+      {/* Main Split Layout: Sidebar + Interactive Map */}
+      <div className="flex flex-col md:flex-row flex-1 relative overflow-hidden">
+        {/* Left Side Panel: Station List & Detail Panel */}
+        <div className="w-full md:w-[420px] bg-slate-900/95 border-r border-slate-800 flex flex-col z-20 shrink-0 shadow-2xl backdrop-blur-xl max-h-[45vh] md:max-h-full">
+          {/* Header Bar */}
+          <div className="p-4 sm:p-5 border-b border-slate-800/80">
+            <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">
+              <MapPin className="w-4 h-4" />
+              <span>Kota Pilot Semarang</span>
+            </div>
+            <h1 className="text-xl font-black text-white tracking-tight">
+              Peta Kualitas Udara
+            </h1>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Pantau sebaran {stations.length} stasiun pemantau resmi & sensor jaringan kota.
+            </p>
+
+            {/* Mobile Tab Toggle */}
+            <div className="grid grid-cols-2 p-1 bg-slate-950 rounded-xl mt-3 md:hidden">
+              <button
+                type="button"
+                onClick={() => setActiveTab('list')}
+                className={`py-1.5 text-xs font-bold rounded-lg transition ${
+                  activeTab === 'list'
+                    ? 'bg-emerald-500 text-slate-950'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-sm">{st.stationName}</h3>
-                  <span
-                    className={`px-2 py-0.5 rounded text-xs font-bold ${
-                      st.aqi && st.aqi <= 50
-                        ? 'bg-emerald-950 text-emerald-400 border border-emerald-600'
-                        : st.aqi && st.aqi <= 100
-                        ? 'bg-amber-950 text-amber-400 border border-amber-600'
-                        : 'bg-orange-950 text-orange-400 border border-orange-600'
-                    }`}
-                  >
-                    AQI {st.aqi ?? '-'}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs text-slate-400">
-                  <div>PM2.5: <span className="text-slate-200 font-medium">{st.pm25Concentration} µg/m³</span></div>
-                  <div>Status: <span className="text-emerald-400 font-medium">{st.freshness}</span></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {selectedStation && (
-          <div className="mt-6 pt-6 border-t border-slate-800">
-            <h4 className="text-xs uppercase font-bold tracking-wider text-slate-400 mb-2">
-              Detail Stasiun Terpilih
-            </h4>
-            <div className="space-y-1 text-xs text-slate-300">
-              <p><strong className="text-white">Sumber:</strong> {selectedStation.sourceName}</p>
-              <p><strong className="text-white">Waktu Observasi:</strong> {selectedStation.observedAt ? new Date(selectedStation.observedAt).toLocaleTimeString() : '-'}</p>
-              <p><strong className="text-white">Usia Data:</strong> {selectedStation.ageMinutes ?? '-'} menit yang lalu</p>
-              <p><strong className="text-white">Koordinat:</strong> {selectedStation.lat}, {selectedStation.lng}</p>
+                Daftar ({stations.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('detail')}
+                className={`py-1.5 text-xs font-bold rounded-lg transition ${
+                  activeTab === 'detail'
+                    ? 'bg-emerald-500 text-slate-950'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Rincian Stasiun
+              </button>
             </div>
           </div>
-        )}
-      </div>
 
-      {/* Map View Placeholder / Interactive Leaflet Container */}
-      <div className="flex-1 relative bg-slate-950 flex items-center justify-center p-8">
-        <div className="text-center max-w-md">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-3xl mx-auto mb-4">
-            🗺️
+          {/* Search Box */}
+          <div className="p-3 border-b border-slate-800/60 bg-slate-950/40">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-3" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari nama stasiun atau lokasi..."
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
+              />
+            </div>
           </div>
-          <h3 className="text-lg font-bold text-white mb-2">Peta Kualitas Udara (Leaflet Container)</h3>
-          <p className="text-slate-400 text-sm mb-4 leading-relaxed">
-            Menampilkan {stations.length} stasiun kualitas udara aktif di kota Semarang. Person 4 dapat mengintegrasikan wrapper Leaflet di <code className="text-emerald-300">src/components/map/MapContainer.tsx</code>.
-          </p>
-          <div className="inline-flex gap-2">
-            <span className="px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-xs text-slate-300">
-              ● Hijau: Baik (0-50)
-            </span>
-            <span className="px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-xs text-slate-300">
-              ● Kuning: Sedang (51-100)
-            </span>
-            <span className="px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-xs text-slate-300">
-              ● Jingga: Sensitif (101-150)
-            </span>
+
+          {/* Scrollable Content: List / Detail */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {loading && stations.length === 0 ? (
+              <div className="py-12 text-center text-slate-500 text-xs flex items-center justify-center gap-2">
+                <RotateCw className="w-4 h-4 animate-spin text-emerald-500" />
+                <span>Memuat sebaran stasiun pemantau...</span>
+              </div>
+            ) : error ? (
+              <div className="p-4 bg-rose-950/60 border border-rose-800 rounded-2xl text-rose-300 text-xs flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block font-bold">Gagal Mengambil Data:</strong>
+                  <span>{error}</span>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Desktop View: Detail Panel on Top (if selected) + List below, OR Tabbed on mobile */}
+                <div className={`${activeTab === 'detail' ? 'block' : 'hidden md:block'}`}>
+                  {selectedStation && (
+                    <div className="mb-4 pb-4 border-b border-slate-800/80">
+                      <StationDetailPanel station={selectedStation} />
+                    </div>
+                  )}
+                </div>
+
+                <div className={`${activeTab === 'list' ? 'block' : 'hidden md:block'}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Daftar Stasiun Terdeteksi
+                    </span>
+                    <span className="text-[11px] text-slate-500">
+                      {filteredStations.length} stasiun
+                    </span>
+                  </div>
+
+                  {filteredStations.length === 0 ? (
+                    <div className="text-center py-8 text-xs text-slate-500">
+                      Tidak ada stasiun yang cocok dengan pencarian &quot;{searchQuery}&quot;.
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {filteredStations.map((st) => {
+                        const isSelected = selectedStation?.stationId === st.stationId;
+                        return (
+                          <div
+                            key={st.stationId}
+                            onClick={() => {
+                              setSelectedStation(st);
+                              setActiveTab('detail');
+                            }}
+                            className={`p-3.5 rounded-2xl border cursor-pointer transition flex items-center justify-between gap-3 ${
+                              isSelected
+                                ? 'bg-slate-800/90 border-emerald-500 shadow-lg shadow-emerald-500/10'
+                                : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900/60'
+                            }`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-xs font-bold text-white truncate">
+                                {st.stationName}
+                              </h4>
+                              <p className="text-[10px] text-slate-400 mt-0.5">
+                                PM2.5:{' '}
+                                <strong className="text-slate-200">
+                                  {st.pm25Concentration !== null
+                                    ? `${st.pm25Concentration.toFixed(1)} µg/m³`
+                                    : 'N/A'}
+                                </strong>{' '}
+                                • {st.sourceName}
+                              </p>
+                            </div>
+
+                            <div className="text-right shrink-0">
+                              <span
+                                className={`inline-block px-2 py-0.5 rounded-lg text-xs font-black ${
+                                  st.aqi && st.aqi <= 50
+                                    ? 'bg-emerald-950 text-emerald-400 border border-emerald-700/60'
+                                    : st.aqi && st.aqi <= 100
+                                    ? 'bg-yellow-950 text-yellow-400 border border-yellow-700/60'
+                                    : 'bg-orange-950 text-orange-400 border border-orange-700/60'
+                                }`}
+                              >
+                                AQI {st.aqi ?? '—'}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
+        </div>
+
+        {/* Right Section: Interactive Leaflet Map Container */}
+        <div className="flex-1 relative h-full">
+          <AirQualityMap
+            stations={stations}
+            selectedStation={selectedStation}
+            onSelectStation={(st) => {
+              setSelectedStation(st);
+              setActiveTab('detail');
+            }}
+            onBoundsChange={(bounds) => {
+              fetchStations(bounds);
+            }}
+          />
         </div>
       </div>
     </div>
