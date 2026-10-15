@@ -82,8 +82,8 @@ export async function getRouteAlternatives(
   }
 
   try {
-    // 3. Format OSRM: {longitude},{latitude};{longitude},{latitude}
-    const url = `${CONSTANTS.DEFAULT_ROUTING_URL}/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson&alternatives=true`;
+    // 3. Format OSRM: {longitude},{latitude};{longitude},{latitude} dengan permintaan hingga 3 rute alternatif
+    const url = `${CONSTANTS.DEFAULT_ROUTING_URL}/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson&alternatives=3`;
 
     const res = await fetchWithTimeout(url, {
       timeoutMs: ECOPULSE_PARAMS.PAR_13_TIMEOUT_ROUTING_MS,
