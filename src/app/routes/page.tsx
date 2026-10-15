@@ -53,8 +53,8 @@ export default function RoutePlannerPage() {
   // Autocomplete Suggestions State
   const [originSuggestions, setOriginSuggestions] = useState<GeocodeCandidate[]>([]);
   const [destSuggestions, setDestSuggestions] = useState<GeocodeCandidate[]>([]);
-  const [showOriginDropdown, setShowOriginDropdown] = useState(false);
-  const [showDestDropdown, setShowDestDropdown] = useState(false);
+  // Menggunakan satu state aktif agar origin dan destination mutually exclusive (tidak pernah terbuka bersamaan)
+  const [activeDropdown, setActiveDropdown] = useState<'origin' | 'destination' | null>(null);
   const [searchingOrigin, setSearchingOrigin] = useState(false);
   const [searchingDest, setSearchingDest] = useState(false);
 
@@ -74,6 +74,18 @@ export default function RoutePlannerPage() {
 
   const originInputRef = useRef<HTMLInputElement>(null);
   const destInputRef = useRef<HTMLInputElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Listener tutup dropdown saat klik di luar area pencarian
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setActiveDropdown(null);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // 1. Fetch Real Stations on mount untuk visualisasi stasiun udara di peta
   useEffect(() => {
@@ -104,7 +116,7 @@ export default function RoutePlannerPage() {
         const json = await res.json();
         if (json.success && Array.isArray(json.data)) {
           setOriginSuggestions(json.data);
-          setShowOriginDropdown(true);
+          setActiveDropdown((curr) => (curr === 'destination' ? 'destination' : 'origin'));
         }
       } catch {
         // Abaikan error jaringan sesaat
@@ -129,7 +141,7 @@ export default function RoutePlannerPage() {
         const json = await res.json();
         if (json.success && Array.isArray(json.data)) {
           setDestSuggestions(json.data);
-          setShowDestDropdown(true);
+          setActiveDropdown((curr) => (curr === 'origin' ? 'origin' : 'destination'));
         }
       } catch {
         // Abaikan error jaringan sesaat
@@ -151,8 +163,7 @@ export default function RoutePlannerPage() {
   const handleSearchRoutes = async () => {
     setLoading(true);
     setErrorMessage(null);
-    setShowOriginDropdown(false);
-    setShowDestDropdown(false);
+    setActiveDropdown(null);
 
     try {
       const res = await fetch('/api/routes/analyze', {
@@ -188,6 +199,7 @@ export default function RoutePlannerPage() {
 
   // Handler Swap Lokasi Asal & Tujuan
   const handleSwap = () => {
+    setActiveDropdown(null);
     const tempInput = originInput;
     const tempCoord = originCoord;
     setOriginInput(destInput);
@@ -303,7 +315,7 @@ export default function RoutePlannerPage() {
         </div>
 
         {/* Directions Search Box */}
-        <div className="p-4 border-b border-slate-200/80 relative">
+        <div ref={searchContainerRef} className="p-4 border-b border-slate-200/80 relative">
           <div className="flex items-center gap-3">
             {/* Visual Dots & Connector */}
             <div className="flex flex-col items-center justify-between h-[76px] py-2">
@@ -320,8 +332,12 @@ export default function RoutePlannerPage() {
                   ref={originInputRef}
                   type="text"
                   value={originInput}
-                  onChange={(e) => setOriginInput(e.target.value)}
-                  onFocus={() => setShowOriginDropdown(true)}
+                  onChange={(e) => {
+                    setOriginInput(e.target.value);
+                    setActiveDropdown('origin');
+                  }}
+                  onFocus={() => setActiveDropdown('origin')}
+                  onClick={() => setActiveDropdown('origin')}
                   placeholder="Pilih titik keberangkatan..."
                   className="w-full bg-slate-100 hover:bg-slate-100/80 focus:bg-white text-slate-800 text-xs font-medium px-3 py-2 rounded-lg border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition"
                 />
@@ -329,9 +345,9 @@ export default function RoutePlannerPage() {
                   <span className="absolute right-2.5 top-2.5 w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                 )}
 
-                {/* Autocomplete Dropdown Origin */}
-                {showOriginDropdown && originSuggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-30 max-h-48 overflow-y-auto custom-scrollbar">
+                {/* Autocomplete Dropdown Origin (Hanya tampil saat activeDropdown === 'origin') */}
+                {activeDropdown === 'origin' && originSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-50 max-h-48 overflow-y-auto custom-scrollbar">
                     {originSuggestions.map((item, idx) => (
                       <button
                         key={idx}
@@ -339,7 +355,7 @@ export default function RoutePlannerPage() {
                         onClick={() => {
                           setOriginInput(item.label.split(',')[0]);
                           setOriginCoord({ lat: item.lat, lng: item.lng });
-                          setShowOriginDropdown(false);
+                          setActiveDropdown(null);
                         }}
                         className="w-full text-left px-3 py-2 text-xs hover:bg-emerald-50 border-b border-slate-100 last:border-none flex items-start gap-2 text-slate-700"
                       >
@@ -357,8 +373,12 @@ export default function RoutePlannerPage() {
                   ref={destInputRef}
                   type="text"
                   value={destInput}
-                  onChange={(e) => setDestInput(e.target.value)}
-                  onFocus={() => setShowDestDropdown(true)}
+                  onChange={(e) => {
+                    setDestInput(e.target.value);
+                    setActiveDropdown('destination');
+                  }}
+                  onFocus={() => setActiveDropdown('destination')}
+                  onClick={() => setActiveDropdown('destination')}
                   placeholder="Pilih tujuan..."
                   className="w-full bg-slate-100 hover:bg-slate-100/80 focus:bg-white text-slate-800 text-xs font-medium px-3 py-2 rounded-lg border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition"
                 />
@@ -366,9 +386,9 @@ export default function RoutePlannerPage() {
                   <span className="absolute right-2.5 top-2.5 w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                 )}
 
-                {/* Autocomplete Dropdown Destination */}
-                {showDestDropdown && destSuggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-30 max-h-48 overflow-y-auto custom-scrollbar">
+                {/* Autocomplete Dropdown Destination (Hanya tampil saat activeDropdown === 'destination') */}
+                {activeDropdown === 'destination' && destSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-50 max-h-48 overflow-y-auto custom-scrollbar">
                     {destSuggestions.map((item, idx) => (
                       <button
                         key={idx}
@@ -376,7 +396,7 @@ export default function RoutePlannerPage() {
                         onClick={() => {
                           setDestInput(item.label.split(',')[0]);
                           setDestCoord({ lat: item.lat, lng: item.lng });
-                          setShowDestDropdown(false);
+                          setActiveDropdown(null);
                         }}
                         className="w-full text-left px-3 py-2 text-xs hover:bg-emerald-50 border-b border-slate-100 last:border-none flex items-start gap-2 text-slate-700"
                       >
@@ -412,6 +432,7 @@ export default function RoutePlannerPage() {
                 onClick={() => {
                   setDestInput(loc.label);
                   setDestCoord({ lat: loc.lat, lng: loc.lng });
+                  setActiveDropdown(null);
                 }}
                 className="px-2 py-0.5 rounded-full bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-slate-600 whitespace-nowrap transition"
               >
@@ -570,11 +591,15 @@ export default function RoutePlannerPage() {
         </div>
       </div>
 
-      {/* 3. Google Maps Style Bottom / Floating Route Details Card */}
+      {/* 3. Google Maps Style Right Floating Route Details Panel */}
       {showDetailsDrawer && activeRoute && (
-        <div className="absolute bottom-6 left-4 right-4 md:left-[450px] md:right-8 z-20 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 p-4 transition-all animate-slide-down max-h-[calc(100vh-6rem)] overflow-y-auto custom-scrollbar">
-          <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
-            <div>
+        <div className="absolute z-20 transition-all duration-300 animate-slide-down
+          bottom-4 left-4 right-4 max-h-[55vh]
+          md:bottom-auto md:left-auto md:top-4 md:right-4 md:w-[420px] md:max-h-[calc(100vh-5rem)]
+          bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 p-4 overflow-y-auto custom-scrollbar flex flex-col gap-3"
+        >
+          <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[11px] whitespace-nowrap">
                   Rute {activeRoute.label} Terpilih
@@ -590,8 +615,9 @@ export default function RoutePlannerPage() {
 
             <button
               onClick={() => setShowDetailsDrawer(false)}
-              className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+              className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition flex-shrink-0"
               aria-label="Tutup Detail"
+              title="Tutup Panel Detail"
             >
               <CloseIcon size={18} />
             </button>
@@ -599,18 +625,18 @@ export default function RoutePlannerPage() {
 
           {/* Stasiun Kualitas Udara Terdekat yang Dilalui */}
           {routeStations.length > 0 && (
-            <div className="mt-3">
+            <div>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
                   <span>📡</span>
-                  <span>Stasiun Kualitas Udara Terdekat yang Dilalui</span>
+                  <span>Stasiun Terdekat yang Dilalui</span>
                 </div>
                 <span className="text-[11px] text-slate-500 font-medium">
-                  {routeStations.length} stasiun terpantau
+                  {routeStations.length} stasiun
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto custom-scrollbar">
                 {routeStations.map((st, idx) => {
                   const aqi = pm25ToAqi(st.pm25) ?? Math.round(st.pm25 * 2.2);
                   const isModel =
@@ -668,37 +694,42 @@ export default function RoutePlannerPage() {
           )}
 
           {/* Actionable Health Mitigation Tips */}
-          <div className="mt-3 pt-3 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-            {(result?.actionMessages || [
-              {
-                ruleId: 'RULE-01',
-                message: 'Tutup rapat kaca jendela kendaraan di area jalan padat.',
-                basis: 'Menghindari paparan partikulat PM2.5 tinggi.',
-              },
-              {
-                ruleId: 'RULE-02',
-                message: 'Gunakan mode resirkulasi udara AC.',
-                basis: 'Mencegah infiltrasi asap knalpot luar ke dalam kabin.',
-              },
-            ]).map((msg) => (
-              <div key={msg.ruleId} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
-                <span className="text-emerald-600 mt-0.5">🛡️</span>
-                <div>
-                  <strong className="block text-slate-800 font-semibold">{msg.message}</strong>
-                  <span className="text-[11px] text-slate-500">{msg.basis}</span>
+          <div className="pt-2 border-t border-slate-100">
+            <span className="text-[11px] font-bold text-slate-600 block mb-1.5">
+              🛡️ Panduan Mitigasi Kesehatan
+            </span>
+            <div className="grid grid-cols-1 gap-2 text-xs">
+              {(result?.actionMessages || [
+                {
+                  ruleId: 'RULE-01',
+                  message: 'Tutup rapat kaca jendela kendaraan di area jalan padat.',
+                  basis: 'Menghindari paparan partikulat PM2.5 tinggi.',
+                },
+                {
+                  ruleId: 'RULE-02',
+                  message: 'Gunakan mode resirkulasi udara AC.',
+                  basis: 'Mencegah infiltrasi asap knalpot luar ke dalam kabin.',
+                },
+              ]).map((msg) => (
+                <div key={msg.ruleId} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
+                  <span className="text-emerald-600 mt-0.5">🛡️</span>
+                  <div>
+                    <strong className="block text-slate-800 font-semibold">{msg.message}</strong>
+                    <span className="text-[11px] text-slate-500">{msg.basis}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
           {/* Action Buttons: Export to Google Maps & Save Trip */}
-          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+          <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
             <button
               onClick={() => {
                 const url = `https://www.google.com/maps/dir/?api=1&origin=${originCoord.lat},${originCoord.lng}&destination=${destCoord.lat},${destCoord.lng}&travelmode=driving`;
                 window.open(url, '_blank');
               }}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold flex items-center gap-2 transition shadow-sm"
+              className="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition shadow-sm"
             >
               <NavigationIcon size={14} />
               <span>Buka Petunjuk di Google Maps ↗</span>
@@ -706,7 +737,7 @@ export default function RoutePlannerPage() {
 
             <button
               onClick={() => setSavedTrip(!savedTrip)}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border transition ${
+              className={`w-full py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition ${
                 savedTrip
                   ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
                   : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
