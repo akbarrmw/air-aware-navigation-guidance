@@ -18,7 +18,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white p-4">
       <div className="max-w-md w-full bg-slate-800 rounded-xl p-8 border border-slate-700 shadow-xl">
         <h1 className="text-2xl font-bold mb-2 text-emerald-400">
-          {isRegister ? 'Daftar Akun EcoPulse' : 'Masuk ke EcoPulse'}
+          {isRegister ? 'Daftar Akun AANG' : 'Masuk ke AANG'}
         </h1>
         <p className="text-slate-400 text-sm mb-6">
           Simpan riwayat perjalanan dan amati pola akumulasi paparan udara Anda.

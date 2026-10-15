@@ -12,5 +12,5 @@ export const CONSTANTS = {
   },
   DEFAULT_GEOCODER_URL: process.env.GEOCODER_BASE_URL || 'https://nominatim.openstreetmap.org',
   DEFAULT_ROUTING_URL: process.env.ROUTING_BASE_URL || 'https://router.project-osrm.org',
-  DEFAULT_USER_AGENT: process.env.GEOCODER_USER_AGENT || 'EcoPulse-AANG-Hackathon/1.0',
+  DEFAULT_USER_AGENT: process.env.GEOCODER_USER_AGENT || 'AANG-Hackathon-App/1.0',
 };

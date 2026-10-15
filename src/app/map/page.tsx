@@ -29,14 +29,16 @@ export default function AirQualityMapPage() {
   const [stations, setStations] = useState<StationData[]>([]);
   const [selectedStation, setSelectedStation] = useState<StationData | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterCategory, setFilterCategory] = useState<'all' | 'good' | 'moderate' | 'unhealthy'>('all');
+  const [filterCategory, setFilterCategory] = useState<
+    'all' | 'waqi' | 'openmeteo' | 'good' | 'moderate' | 'unhealthy'
+  >('all');
   const [loading, setLoading] = useState(true);
 
-  // Fetch real stations from API
+  // Fetch real stations from API (Cakupan Seluruh Indonesia - WAQI + Open-Meteo)
   useEffect(() => {
     async function loadStations() {
       try {
-        const res = await fetch('/api/air-quality/stations');
+        const res = await fetch('/api/air-quality/stations?south=-11.0&west=95.0&north=6.0&east=141.0');
         const json: ApiResponse<StationData[]> = await res.json();
         if (json.success && Array.isArray(json.data)) {
           setStations(json.data);
@@ -53,7 +55,7 @@ export default function AirQualityMapPage() {
     loadStations();
   }, []);
 
-  // Filter stations based on search query and category
+  // Filter stations based on search query, provider, and category
   const filteredStations = stations.filter((st) => {
     const matchesSearch =
       st.stationName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -65,6 +67,8 @@ export default function AirQualityMapPage() {
     if (filterCategory === 'good') matchesCategory = aqi <= 50;
     else if (filterCategory === 'moderate') matchesCategory = aqi > 50 && aqi <= 100;
     else if (filterCategory === 'unhealthy') matchesCategory = aqi > 100;
+    else if (filterCategory === 'waqi') matchesCategory = st.dataType === 'station_observation' || (st.sourceName || '').includes('WAQI');
+    else if (filterCategory === 'openmeteo') matchesCategory = st.dataType === 'model_fallback' || (st.sourceName || '').includes('Open-Meteo');
 
     return matchesSearch && matchesCategory;
   });
@@ -92,13 +96,13 @@ export default function AirQualityMapPage() {
           stations={filteredStations}
           activeStationId={selectedStation?.stationId}
           onSelectStation={(st) => setSelectedStation(st)}
-          center={selectedStation ? [selectedStation.lat, selectedStation.lng] : [-6.9932, 110.4203]}
-          zoom={13}
+          center={selectedStation ? [selectedStation.lat, selectedStation.lng] : [-2.5, 118.0]}
+          zoom={selectedStation ? 11 : 5}
         />
       </div>
 
       {/* 2. Google Maps Style Floating Search & Station List Panel */}
-      <div className="absolute top-4 left-4 z-20 w-[380px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-5rem)] flex flex-col bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden">
+      <div className="absolute top-4 left-4 z-20 w-[400px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-5rem)] flex flex-col bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden">
         {/* Search Bar */}
         <div className="p-3.5 border-b border-slate-200/80">
           <div className="flex items-center gap-2 bg-slate-100 hover:bg-slate-100/80 focus-within:bg-white rounded-xl px-3 py-2 border border-slate-200 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 transition">
@@ -107,7 +111,7 @@ export default function AirQualityMapPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari stasiun pemantauan udara..."
+              placeholder="Cari stasiun atau kota di Indonesia..."
               className="w-full bg-transparent text-xs text-slate-800 placeholder-slate-400 outline-none font-medium"
             />
             {searchQuery && (
@@ -117,11 +121,11 @@ export default function AirQualityMapPage() {
             )}
           </div>
 
-          {/* Filter Chips */}
+          {/* Filter Chips (Termasuk WAQI & Open-Meteo) */}
           <div className="flex items-center gap-1.5 mt-2.5 overflow-x-auto pb-1 custom-scrollbar text-[11px]">
             <button
               onClick={() => setFilterCategory('all')}
-              className={`px-2.5 py-1 rounded-full font-semibold border transition ${
+              className={`px-2.5 py-1 rounded-full font-semibold border transition whitespace-nowrap flex-shrink-0 ${
                 filterCategory === 'all'
                   ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
                   : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
@@ -130,34 +134,54 @@ export default function AirQualityMapPage() {
               Semua ({stations.length})
             </button>
             <button
+              onClick={() => setFilterCategory('waqi')}
+              className={`px-2.5 py-1 rounded-full font-semibold border transition whitespace-nowrap flex-shrink-0 ${
+                filterCategory === 'waqi'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                  : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+              }`}
+            >
+              WAQI Sensor
+            </button>
+            <button
+              onClick={() => setFilterCategory('openmeteo')}
+              className={`px-2.5 py-1 rounded-full font-semibold border transition whitespace-nowrap flex-shrink-0 ${
+                filterCategory === 'openmeteo'
+                  ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                  : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'
+              }`}
+            >
+              Open-Meteo Model
+            </button>
+            <button
               onClick={() => setFilterCategory('good')}
-              className={`px-2.5 py-1 rounded-full font-semibold border transition ${
+              className={`px-2.5 py-1 rounded-full font-semibold border transition whitespace-nowrap flex-shrink-0 ${
                 filterCategory === 'good'
                   ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm'
                   : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
               }`}
             >
-              Baik
+              Baik (≤50)
             </button>
             <button
               onClick={() => setFilterCategory('moderate')}
-              className={`px-2.5 py-1 rounded-full font-semibold border transition ${
+              className={`px-2.5 py-1 rounded-full font-semibold border transition whitespace-nowrap flex-shrink-0 ${
                 filterCategory === 'moderate'
                   ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
                   : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
               }`}
             >
-              Sedang
+              Sedang (51-100)
             </button>
             <button
               onClick={() => setFilterCategory('unhealthy')}
-              className={`px-2.5 py-1 rounded-full font-semibold border transition ${
+              className={`px-2.5 py-1 rounded-full font-semibold border transition whitespace-nowrap flex-shrink-0 ${
                 filterCategory === 'unhealthy'
                   ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
                   : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
               }`}
             >
-              Tidak Sehat
+              Tidak Sehat (&gt;100)
             </button>
           </div>
         </div>
@@ -168,34 +192,43 @@ export default function AirQualityMapPage() {
             filteredStations.map((st) => {
               const aqi = st.aqi ?? Math.round((st.pm25Concentration ?? 25) * 2.2);
               const isSelected = selectedStation?.stationId === st.stationId;
+              const isModel = st.dataType === 'model_fallback' || (st.sourceName || '').includes('Open-Meteo');
 
               return (
                 <button
                   key={st.stationId}
                   onClick={() => setSelectedStation(st)}
-                  className={`w-full text-left p-3 rounded-xl border transition flex items-center justify-between ${
+                  className={`w-full text-left p-3 rounded-xl border transition flex items-center justify-between gap-2 ${
                     isSelected
                       ? 'border-emerald-500 bg-emerald-50/70 shadow-sm ring-1 ring-emerald-500/20'
                       : 'border-slate-100 bg-white hover:bg-slate-50'
                   }`}
                 >
-                  <div>
-                    <strong className="block text-xs font-bold text-slate-800 line-clamp-1">
-                      {st.stationName}
-                    </strong>
-                    <span className="text-[11px] text-slate-500">
-                      PM2.5: {(st.pm25Concentration ?? 0).toFixed(1)} µg/m³ • {st.sourceName || 'WAQI'}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase tracking-wider ${
+                        isModel ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-blue-100 text-blue-700 border border-blue-200'
+                      }`}>
+                        {isModel ? 'Open-Meteo' : 'WAQI'}
+                      </span>
+                      <strong className="block text-xs font-bold text-slate-800 truncate">
+                        {st.stationName}
+                      </strong>
+                    </div>
+                    <span className="text-[11px] text-slate-500 truncate block">
+                      PM2.5: {(st.pm25Concentration ?? 0).toFixed(1)} µg/m³
                     </span>
                   </div>
 
+                  {/* Single Line Stable AQI Badge */}
                   <span
-                    className="px-2 py-1 rounded-full text-white font-bold text-xs shadow-sm flex items-center gap-1"
+                    className="px-2.5 py-1 rounded-full text-white font-bold text-xs shadow-sm flex items-center gap-1 whitespace-nowrap flex-shrink-0"
                     style={{
                       backgroundColor:
                         aqi <= 50 ? '#10b981' : aqi <= 100 ? '#f59e0b' : aqi <= 150 ? '#f97316' : '#ef4444',
                     }}
                   >
-                    <span>AQI</span>
+                    <span className="opacity-90">AQI</span>
                     <span>{aqi}</span>
                   </span>
                 </button>
@@ -203,7 +236,7 @@ export default function AirQualityMapPage() {
             })
           ) : (
             <div className="p-6 text-center text-xs text-slate-400">
-              {loading ? 'Memuat stasiun...' : 'Tidak ada stasiun yang cocok.'}
+              {loading ? 'Memuat stasiun udara...' : 'Tidak ada stasiun yang cocok dengan filter.'}
             </div>
           )}
         </div>
@@ -211,26 +244,27 @@ export default function AirQualityMapPage() {
 
       {/* 3. Floating Station Detail Card (Google Maps Place Info Style) */}
       {selectedStation && (
-        <div className="absolute bottom-6 left-4 right-4 md:left-[410px] md:right-auto md:w-96 z-20 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 p-4 transition-all animate-slide-down">
+        <div className="absolute bottom-6 left-4 right-4 md:left-[430px] md:right-auto md:w-96 z-20 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 p-4 transition-all animate-slide-down">
           <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
-            <div>
+            <div className="min-w-0 flex-1">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
                 Stasiun Observasi Kualitas Udara
               </span>
-              <h3 className="text-sm font-bold text-slate-900 leading-tight">
+              <h3 className="text-sm font-bold text-slate-900 leading-tight truncate">
                 {selectedStation.stationName}
               </h3>
-              <span className="text-xs text-slate-500">
-                Kota Semarang • Data Segar (&lt; 1 jam)
+              <span className="text-xs text-slate-500 block truncate mt-0.5">
+                {selectedStation.sourceName || 'Sumber Terverifikasi'} • Data Terkini
               </span>
             </div>
 
+            {/* Single Line Stable AQI Badge in Card Header */}
             <div
-              className="px-3 py-1.5 rounded-xl text-white font-extrabold text-sm flex flex-col items-center shadow-md"
+              className="px-3.5 py-1.5 rounded-xl text-white font-extrabold text-sm flex items-center gap-1.5 shadow-md whitespace-nowrap flex-shrink-0"
               style={{ backgroundColor: activeCategory.color }}
             >
-              <span className="text-[9px] uppercase font-semibold tracking-wide">AQI</span>
-              <span>{activeAqi}</span>
+              <span className="text-[10px] uppercase font-bold tracking-wider opacity-90">AQI</span>
+              <span className="text-base font-black">{activeAqi}</span>
             </div>
           </div>
 

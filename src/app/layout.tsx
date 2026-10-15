@@ -9,7 +9,7 @@ import {
 } from '@/components/common/Icons';
 
 export const metadata: Metadata = {
-  title: 'EcoPulse — Air Quality Route Intelligence',
+  title: 'AANG — Air-Aware Navigation Guidance',
   description:
     'Platform navigasi cerdas yang membantu masyarakat perkotaan memperkirakan paparan polusi PM2.5 dan memilih rute perjalanan yang lebih sehat.',
 };
@@ -38,8 +38,8 @@ export default function RootLayout({
                 <LeafLogo />
               </div>
               <div className="brand-copy">
-                <span className="brand-name">EcoPulse</span>
-                <span className="brand-mode">Air-Aware Navigation</span>
+                <span className="brand-name">AANG</span>
+                <span className="brand-mode">Air-Aware Navigation Guidance</span>
               </div>
             </Link>
 
@@ -61,7 +61,7 @@ export default function RootLayout({
             <div className="flex items-center gap-3">
               <div className="live-badge hidden sm:flex">
                 <span className="live-dot" />
-                <span className="font-semibold text-slate-700">Semarang (Pilot)</span>
+                <span className="font-semibold text-slate-700">Indonesia Live</span>
               </div>
 
               <Link
@@ -69,7 +69,7 @@ export default function RootLayout({
                 className="w-8 h-8 rounded-full bg-slate-800 text-white font-bold text-xs flex items-center justify-center hover:bg-slate-700 transition shadow-sm"
                 aria-label="Profil Pengguna"
               >
-                EP
+                AA
               </Link>
             </div>
           </header>

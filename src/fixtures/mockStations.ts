@@ -9,9 +9,9 @@
 import type { StationData } from '@/types/air-quality';
 
 /**
- * Fixture stasiun kualitas udara simulasi (Semarang Pilot City)
+ * Fixture stasiun kualitas udara kota pilot Semarang resmi (4 stasiun)
  */
-export const MOCK_STATIONS: StationData[] = [
+export const SEMARANG_PILOT_STATIONS: StationData[] = [
   {
     stationId: 'st-smg-01',
     stationName: 'Stasiun Simpang Lima',
@@ -75,5 +75,108 @@ export const MOCK_STATIONS: StationData[] = [
     freshness: 'fresh',
     dataType: 'simulation',
     sourceName: 'Simulasi WAQI - Tanjung Emas',
+  },
+];
+
+/**
+ * Fixture stasiun kualitas udara simulasi seluruh Indonesia
+ */
+export const MOCK_STATIONS: StationData[] = [
+  ...SEMARANG_PILOT_STATIONS,
+  {
+    stationId: 'st-jkt-01',
+    stationName: 'Stasiun DKI Jakarta (Monas)',
+    lat: -6.1754,
+    lng: 106.8272,
+    aqi: 145,
+    dominantPollutant: 'pm25',
+    pm25Concentration: 53.4,
+    pm25Origin: 'measured',
+    pm10Concentration: 78.0,
+    observedAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+    ageMinutes: 15,
+    freshness: 'fresh',
+    dataType: 'simulation',
+    sourceName: 'Simulasi WAQI - Jakarta Pusat',
+  },
+  {
+    stationId: 'st-jkt-02',
+    stationName: 'Stasiun DKI Jakarta (GBK Senayan)',
+    lat: -6.2185,
+    lng: 106.8026,
+    aqi: 120,
+    dominantPollutant: 'pm25',
+    pm25Concentration: 43.1,
+    pm25Origin: 'measured',
+    pm10Concentration: 64.0,
+    observedAt: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+    ageMinutes: 25,
+    freshness: 'fresh',
+    dataType: 'simulation',
+    sourceName: 'Simulasi WAQI - Jakarta Selatan',
+  },
+  {
+    stationId: 'st-bdg-01',
+    stationName: 'Stasiun Kota Bandung (Gedung Sate)',
+    lat: -6.9025,
+    lng: 107.6186,
+    aqi: 68,
+    dominantPollutant: 'pm25',
+    pm25Concentration: 20.3,
+    pm25Origin: 'measured',
+    pm10Concentration: 38.0,
+    observedAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    ageMinutes: 30,
+    freshness: 'fresh',
+    dataType: 'simulation',
+    sourceName: 'Simulasi WAQI - Bandung',
+  },
+  {
+    stationId: 'st-sby-01',
+    stationName: 'Stasiun Kota Surabaya (Wonokromo)',
+    lat: -7.2982,
+    lng: 112.7388,
+    aqi: 95,
+    dominantPollutant: 'pm25',
+    pm25Concentration: 33.2,
+    pm25Origin: 'measured',
+    pm10Concentration: 52.0,
+    observedAt: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+    ageMinutes: 20,
+    freshness: 'fresh',
+    dataType: 'simulation',
+    sourceName: 'Simulasi WAQI - Surabaya',
+  },
+  {
+    stationId: 'st-ygy-01',
+    stationName: 'Stasiun D.I. Yogyakarta (Malioboro)',
+    lat: -7.7926,
+    lng: 110.3658,
+    aqi: 48,
+    dominantPollutant: 'pm25',
+    pm25Concentration: 11.5,
+    pm25Origin: 'measured',
+    pm10Concentration: 26.0,
+    observedAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+    ageMinutes: 10,
+    freshness: 'fresh',
+    dataType: 'simulation',
+    sourceName: 'Simulasi WAQI - Yogyakarta',
+  },
+  {
+    stationId: 'st-dps-01',
+    stationName: 'Stasiun Denpasar Bali (Renon)',
+    lat: -8.6705,
+    lng: 115.2335,
+    aqi: 38,
+    dominantPollutant: 'pm25',
+    pm25Concentration: 9.1,
+    pm25Origin: 'measured',
+    pm10Concentration: 18.0,
+    observedAt: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
+    ageMinutes: 35,
+    freshness: 'fresh',
+    dataType: 'simulation',
+    sourceName: 'Simulasi WAQI - Denpasar',
   },
 ];

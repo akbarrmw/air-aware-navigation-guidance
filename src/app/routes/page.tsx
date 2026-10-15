@@ -14,6 +14,8 @@ import type { AnalyzeRoutesResponseData } from '@/types/analyze';
 import type { RouteLabel } from '@/types/common';
 import type { StationData } from '@/types/air-quality';
 import type { GeocodeCandidate } from '@/lib/services/geocodingService';
+import { formatDuration, formatExtraTime, formatDistance } from '@/lib/utils/formatters';
+import { haversineDistanceMeters, pm25ToAqi } from '@/lib/algorithms';
 
 // Dynamic import Leaflet NavigationMap untuk mencegah SSR issue di Next.js
 const NavigationMap = dynamic(() => import('@/components/map/NavigationMap'), {
@@ -22,20 +24,23 @@ const NavigationMap = dynamic(() => import('@/components/map/NavigationMap'), {
     <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500">
       <div className="flex flex-col items-center gap-3">
         <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-        <span className="text-xs font-semibold text-slate-600">Memuat Peta Navigasi Semarang...</span>
+        <span className="text-xs font-semibold text-slate-600">Memuat Peta Navigasi Indonesia...</span>
       </div>
     </div>
   ),
 });
 
-// Shortcut titik populer di Kota Semarang untuk kemudahan testing 1-klik
+// Shortcut titik populer di berbagai kota Indonesia untuk kemudahan navigasi 1-klik
 const POPULAR_LOCATIONS = [
-  { label: 'Simpang Lima', lat: -6.9928, lng: 110.4222 },
-  { label: 'Undip Tembalang', lat: -7.0514, lng: 110.4388 },
-  { label: 'RSUP Dr. Kariadi', lat: -6.9961, lng: 110.4072 },
-  { label: 'Tugu Muda', lat: -6.9840, lng: 110.4093 },
-  { label: 'Stasiun Tawang', lat: -6.9644, lng: 110.4283 },
-  { label: 'Bandara Ahmad Yani', lat: -6.9744, lng: 110.3756 },
+  { label: 'Jakarta (Monas)', lat: -6.1754, lng: 106.8272 },
+  { label: 'Jakarta (Bundaran HI)', lat: -6.1950, lng: 106.8230 },
+  { label: 'Bandung (Gedung Sate)', lat: -6.9025, lng: 107.6186 },
+  { label: 'Semarang (Simpang Lima)', lat: -6.9928, lng: 110.4222 },
+  { label: 'Yogyakarta (Malioboro)', lat: -7.7926, lng: 110.3658 },
+  { label: 'Surabaya (Tugu Pahlawan)', lat: -7.2458, lng: 112.7378 },
+  { label: 'Bali (Kuta)', lat: -8.7185, lng: 115.1686 },
+  { label: 'Medan (Merdeka)', lat: 3.5908, lng: 98.6781 },
+  { label: 'IKN Nusantara', lat: -0.9634, lng: 116.7088 },
 ];
 
 export default function RoutePlannerPage() {
@@ -195,6 +200,54 @@ export default function RoutePlannerPage() {
   const activeRoute = result?.routes.find((r) => r.label === selectedRouteLabel) || result?.routes[0];
   const recommendedRoute = result?.routes.find((r) => r.label === result?.recommendedRouteLabel) || result?.routes[0];
   const fastestRoute = result?.routes.find((r) => r.isFastest) || result?.routes[0];
+
+  // Stasiun kualitas udara terdekat yang dilalui rute terpilih
+  const routeStations = React.useMemo(() => {
+    if (!activeRoute) return [];
+
+    // 1. Ambil stasiun yang dilalui dari hasil algoritma IDW rute
+    if (activeRoute.estimate?.stationsUsed && activeRoute.estimate.stationsUsed.length > 0) {
+      return activeRoute.estimate.stationsUsed.map((st) => ({
+        stationId: st.stationId,
+        stationName: st.stationName,
+        distanceMeters: st.distanceMeters,
+        pm25: st.pm25,
+        dataType: st.dataType,
+      }));
+    }
+
+    // 2. Fallback cerdas: jika stationsUsed belum terisi, cari 3 stasiun terdekat dari titik koridor rute
+    if (stations.length > 0) {
+      const coords = (activeRoute.geometry?.coordinates as [number, number][]) || [];
+      const samplePoints: [number, number][] =
+        coords.length > 0
+          ? [coords[0], coords[Math.floor(coords.length / 2)], coords[coords.length - 1]]
+          : [
+              [originCoord.lat, originCoord.lng],
+              [destCoord.lat, destCoord.lng],
+            ];
+
+      return stations
+        .map((st) => {
+          let minDistance = Infinity;
+          for (const [lat, lng] of samplePoints) {
+            const d = haversineDistanceMeters(st.lat, st.lng, lat, lng);
+            if (d < minDistance) minDistance = d;
+          }
+          return {
+            stationId: st.stationId,
+            stationName: st.stationName,
+            distanceMeters: minDistance,
+            pm25: st.pm25Concentration ?? 25,
+            dataType: st.dataType,
+          };
+        })
+        .sort((a, b) => a.distanceMeters - b.distanceMeters)
+        .slice(0, 3);
+    }
+
+    return [];
+  }, [activeRoute, stations, originCoord, destCoord]);
 
   return (
     <div className="relative w-full h-[calc(100vh-56px)] mt-[56px] overflow-hidden bg-slate-100">
@@ -434,11 +487,13 @@ export default function RoutePlannerPage() {
                 const isSelected = route.label === selectedRouteLabel;
                 const isRecommended = route.label === result.recommendedRouteLabel;
                 const isCleanAir = !route.isFastest;
-                const minutes = Math.round(route.durationSeconds / 60);
-                const km = (route.distanceMeters / 1000).toFixed(1);
-                const exposureSaved = route.comparison.exposureDeltaPercent != null
-                  ? Math.abs(Math.round(route.comparison.exposureDeltaPercent))
-                  : null;
+                const durationFormatted = formatDuration(route.durationSeconds);
+                const km = formatDistance(route.distanceMeters);
+                const exposureSaved =
+                  route.comparison.exposureDeltaPercent != null
+                    ? Math.abs(Math.round(route.comparison.exposureDeltaPercent))
+                    : null;
+                const stationsCount = route.estimate?.stationsUsed?.length || 0;
 
                 return (
                   <button
@@ -471,13 +526,20 @@ export default function RoutePlannerPage() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-3 text-xs text-slate-600 font-medium">
-                      <span className="text-base font-extrabold text-slate-900">{minutes} mnt</span>
+                    <div className="flex items-center gap-2 text-xs text-slate-600 font-medium flex-wrap">
+                      <span className="text-base font-extrabold text-slate-900 whitespace-nowrap">
+                        {durationFormatted}
+                      </span>
                       <span>•</span>
-                      <span>{km} km</span>
+                      <span className="whitespace-nowrap">{km}</span>
                       {route.comparison.extraSeconds > 0 && (
-                        <span className="text-amber-600 font-bold bg-amber-50 px-1.5 py-0.5 rounded text-[11px]">
-                          +{Math.round(route.comparison.extraSeconds / 60)} mnt
+                        <span className="text-amber-600 font-bold bg-amber-50 px-1.5 py-0.5 rounded text-[11px] whitespace-nowrap">
+                          {formatExtraTime(route.comparison.extraSeconds)}
+                        </span>
+                      )}
+                      {stationsCount > 0 && (
+                        <span className="text-slate-500 text-[11px] bg-slate-100 px-1.5 py-0.5 rounded whitespace-nowrap ml-auto">
+                          📡 {stationsCount} stasiun dilalui
                         </span>
                       )}
                     </div>
@@ -486,11 +548,11 @@ export default function RoutePlannerPage() {
                     <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
                       <span className="text-slate-500">Estimasi Paparan:</span>
                       <div className="flex items-center gap-1.5">
-                        <strong className="text-slate-800 font-bold">
+                        <strong className="text-slate-800 font-bold whitespace-nowrap">
                           {route.estimate.exposureIndexPm25 ?? '-'} <small className="text-[10px]">µg/m³·mnt</small>
                         </strong>
                         {exposureSaved != null && exposureSaved > 0 && isCleanAir && (
-                          <span className="text-emerald-700 font-bold text-[11px] bg-emerald-100 px-1.5 py-0.5 rounded">
+                          <span className="text-emerald-700 font-bold text-[11px] bg-emerald-100 px-1.5 py-0.5 rounded whitespace-nowrap">
                             ↓ {exposureSaved}% Lebih Bersih
                           </span>
                         )}
@@ -510,15 +572,15 @@ export default function RoutePlannerPage() {
 
       {/* 3. Google Maps Style Bottom / Floating Route Details Card */}
       {showDetailsDrawer && activeRoute && (
-        <div className="absolute bottom-6 left-4 right-4 md:left-[450px] md:right-8 z-20 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 p-4 transition-all animate-slide-down">
+        <div className="absolute bottom-6 left-4 right-4 md:left-[450px] md:right-8 z-20 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 p-4 transition-all animate-slide-down max-h-[calc(100vh-6rem)] overflow-y-auto custom-scrollbar">
           <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[11px]">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[11px] whitespace-nowrap">
                   Rute {activeRoute.label} Terpilih
                 </span>
-                <span className="text-xs text-slate-500 font-medium">
-                  {Math.round(activeRoute.durationSeconds / 60)} menit ({((activeRoute.distanceMeters) / 1000).toFixed(1)} km)
+                <span className="text-xs text-slate-500 font-medium whitespace-nowrap">
+                  {formatDuration(activeRoute.durationSeconds)} ({formatDistance(activeRoute.distanceMeters)})
                 </span>
               </div>
               <h3 className="text-sm font-bold text-slate-900 leading-snug">
@@ -535,8 +597,78 @@ export default function RoutePlannerPage() {
             </button>
           </div>
 
+          {/* Stasiun Kualitas Udara Terdekat yang Dilalui */}
+          {routeStations.length > 0 && (
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                  <span>📡</span>
+                  <span>Stasiun Kualitas Udara Terdekat yang Dilalui</span>
+                </div>
+                <span className="text-[11px] text-slate-500 font-medium">
+                  {routeStations.length} stasiun terpantau
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                {routeStations.map((st, idx) => {
+                  const aqi = pm25ToAqi(st.pm25) ?? Math.round(st.pm25 * 2.2);
+                  const isModel =
+                    st.dataType === 'model_fallback' ||
+                    (st.stationName || '').includes('Open-Meteo') ||
+                    (st.stationName || '').includes('Model');
+
+                  let aqiColor = '#10b981';
+                  if (aqi > 300) aqiColor = '#7f1d1d';
+                  else if (aqi > 200) aqiColor = '#8b5cf6';
+                  else if (aqi > 150) aqiColor = '#ef4444';
+                  else if (aqi > 100) aqiColor = '#f97316';
+                  else if (aqi > 50) aqiColor = '#f59e0b';
+
+                  return (
+                    <div
+                      key={st.stationId || idx}
+                      className="p-2.5 rounded-xl bg-slate-50/90 hover:bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-2 text-xs"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase tracking-wider ${
+                              isModel
+                                ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                                : 'bg-blue-100 text-blue-700 border border-blue-200'
+                            }`}
+                          >
+                            {isModel ? 'Open-Meteo' : 'WAQI'}
+                          </span>
+                          <strong className="text-slate-800 font-semibold truncate block">
+                            {st.stationName}
+                          </strong>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5 truncate">
+                          <span>{formatDistance(st.distanceMeters)} dari rute</span>
+                          <span>•</span>
+                          <span>PM2.5: {st.pm25.toFixed(1)} µg/m³</span>
+                        </div>
+                      </div>
+
+                      {/* Single Line Stable AQI Badge */}
+                      <span
+                        className="px-2 py-0.5 rounded-full text-white font-bold text-xs shadow-xs flex items-center gap-1 whitespace-nowrap flex-shrink-0"
+                        style={{ backgroundColor: aqiColor }}
+                      >
+                        <span className="opacity-90">AQI</span>
+                        <span>{aqi}</span>
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Actionable Health Mitigation Tips */}
-          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+          <div className="mt-3 pt-3 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
             {(result?.actionMessages || [
               {
                 ruleId: 'RULE-01',

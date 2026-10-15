@@ -124,6 +124,24 @@ export function pm25ToCategoryLabel(pm25OrCode: number | AqiCategoryCode | null)
   return categoryInfo ? categoryInfo.labelId : 'Tidak Tersedia';
 }
 
+export function pm25ToAqi(pm25: number | null): number | null {
+  if (pm25 === null || typeof pm25 !== 'number' || isNaN(pm25) || pm25 < 0) {
+    return null;
+  }
+
+  const clamped = Math.min(pm25, 500.4);
+  const bp = EPA_PM25_BREAKPOINTS.find(
+    (b) => clamped >= b.cLow && clamped <= b.cHigh
+  );
+
+  if (!bp) return 500;
+
+  const aqi =
+    ((clamped - bp.cLow) / (bp.cHigh - bp.cLow)) * (bp.iHigh - bp.iLow) + bp.iLow;
+
+  return Math.round(aqi);
+}
+
 /**
  * Alias kompatibilitas mundur untuk aqiToPm25.
  */

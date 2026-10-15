@@ -1,7 +1,7 @@
 import { StationData } from '@/types/air-quality';
 import { MOCK_STATIONS } from '@/fixtures/mockStations';
 import { fetchWaqiStationsInBounds } from './waqiAdapter';
-import { fetchOpenMeteoAirQuality } from './openMeteoAdapter';
+import { fetchOpenMeteoAirQuality, fetchOpenMeteoMultiStations } from './openMeteoAdapter';
 import { CONSTANTS } from '@/config/constants';
 import { appCache } from '@/lib/utils/cache';
 
@@ -14,8 +14,8 @@ export interface AirQualityBounds {
 
 /**
  * Service pengelola data kualitas udara:
- * 1. Mode simulasi: langsung mengembalikan MOCK_STATIONS
- * 2. Mode live: WAQI -> Fallback Open-Meteo jika stasiun minim -> In-memory cache -> Fallback fixture jika gagal total
+ * 1. Mode simulasi: langsung mengembalikan MOCK_STATIONS (mencakup kota-kota besar Indonesia)
+ * 2. Mode live: Menggabungkan observasi sensor riil (WAQI) dan model grid (Open-Meteo)
  * Pemilik: Person 2 (Backend Services)
  */
 export async function getAirQualityStations(
@@ -33,38 +33,67 @@ export async function getAirQualityStations(
     east: CONSTANTS.PILOT_CITY.BBOX[3],
   };
 
-  const cacheKey = `aq_stations_${effectiveBounds.south}_${effectiveBounds.west}_${effectiveBounds.north}_${effectiveBounds.east}`;
+  const cacheKey = `aq_combined_stations_${effectiveBounds.south}_${effectiveBounds.west}_${effectiveBounds.north}_${effectiveBounds.east}`;
   const cached = appCache.get<StationData[]>(cacheKey);
   if (cached && cached.length > 0) {
     return cached;
   }
 
   try {
-    // 1. Coba ambil dari WAQI
-    let stations = await fetchWaqiStationsInBounds(effectiveBounds);
+    // 1. Ambil stasiun observasi fisik dari WAQI
+    const waqiStations = await fetchWaqiStationsInBounds(effectiveBounds);
 
-    // 2. Jika stasiun observasi WAQI kurang dari 2 di area tersebut, lengkapi dengan titik model Open-Meteo
-    if (stations.length < 2) {
-      const centerLat = (effectiveBounds.south + effectiveBounds.north) / 2;
-      const centerLng = (effectiveBounds.west + effectiveBounds.east) / 2;
+    // 2. Ambil stasiun model cuaca & udara dari Open-Meteo
+    let openMeteoStations: StationData[] = [];
+    try {
+      // Jika bounds luas (misal seluruh Indonesia), ambil titik regional Open-Meteo
+      const isWideBounds =
+        Math.abs(effectiveBounds.north - effectiveBounds.south) > 1.5 ||
+        Math.abs(effectiveBounds.east - effectiveBounds.west) > 1.5;
 
-      const fallbackPoint = await fetchOpenMeteoAirQuality(
-        centerLat,
-        centerLng,
-        CONSTANTS.PILOT_CITY.NAME
-      );
+      if (isWideBounds) {
+        const allRegional = await fetchOpenMeteoMultiStations();
+        openMeteoStations = allRegional.filter(
+          (st) =>
+            st.lat >= effectiveBounds.south &&
+            st.lat <= effectiveBounds.north &&
+            st.lng >= effectiveBounds.west &&
+            st.lng <= effectiveBounds.east
+        );
+      } else {
+        // Untuk koridor rute yang lebih spesifik, ambil titik tengah rute dari Open-Meteo
+        const centerLat = (effectiveBounds.south + effectiveBounds.north) / 2;
+        const centerLng = (effectiveBounds.west + effectiveBounds.east) / 2;
+        const centerPoint = await fetchOpenMeteoAirQuality(centerLat, centerLng, 'Koridor Perjalanan');
+        if (centerPoint) {
+          openMeteoStations = [centerPoint];
+        }
+      }
+    } catch (err) {
+      console.warn('[AirQualityService] Gagal mengambil data Open-Meteo:', err);
+    }
 
-      if (fallbackPoint) {
-        stations = [...stations, fallbackPoint];
+    // 3. Gabungkan data WAQI dan Open-Meteo (hindari duplikasi koordinat yang terlalu berdekatan < 3 km)
+    const combinedStations: StationData[] = [...waqiStations];
+
+    for (const omStation of openMeteoStations) {
+      const isTooClose = waqiStations.some((w) => {
+        const dLat = Math.abs(w.lat - omStation.lat);
+        const dLng = Math.abs(w.lng - omStation.lng);
+        return dLat < 0.04 && dLng < 0.04; // ~4.4 km
+      });
+
+      if (!isTooClose) {
+        combinedStations.push(omStation);
       }
     }
 
-    if (stations.length > 0) {
-      appCache.set(cacheKey, stations, 10); // Cache 10 menit
-      return stations;
+    if (combinedStations.length > 0) {
+      appCache.set(cacheKey, combinedStations, 10); // Cache 10 menit
+      return combinedStations;
     }
 
-    // Jika live API tidak mengembalikan stasiun, fallback ke mock dengan peringatan
+    // Jika live API tidak mengembalikan stasiun, fallback ke mock
     console.warn('[AirQualityService] Tidak ada stasiun ditemukan dari live provider, menggunakan fallback data.');
     return MOCK_STATIONS;
   } catch (err) {
