@@ -448,3 +448,27 @@ describe('7. Mesin Aturan Rekomendasi Kesehatan (ALG-04, TC-13)', () => {
   });
 });
 
+describe('8. Evaluasi Galat Spasial Leave-One-Station-Out (M-05, TC-28)', () => {
+  it('TC-28: Menjalankan evaluasi Leave-One-Out pada fixture stasiun kota pilot dan menghitung MAE/RMSE numerik', async () => {
+    const { evaluateLeaveOneOut } = await import('../../scripts/evalLeaveOneOut');
+    const report = evaluateLeaveOneOut();
+
+    expect(report.totalStations).toBe(4);
+    expect(report.evaluatedCount).toBe(4);
+    expect(report.skippedCount).toBe(0);
+
+    // Nilai MAE dan RMSE bernilai positif dan terukur
+    expect(report.meanAbsoluteError).toBeGreaterThan(0);
+    expect(report.rootMeanSquaredError).toBeGreaterThan(0);
+    expect(report.rootMeanSquaredError).toBeGreaterThanOrEqual(report.meanAbsoluteError);
+
+    // Seluruh stasiun target memiliki selisih numerik
+    for (const res of report.results) {
+      expect(res.predictedPm25).not.toBeNull();
+      expect(res.absoluteError).toBeGreaterThanOrEqual(0);
+      expect(res.stationsAvailable).toBeGreaterThanOrEqual(1);
+    }
+  });
+});
+
+
