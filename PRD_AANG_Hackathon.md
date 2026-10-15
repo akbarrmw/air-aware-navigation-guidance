@@ -1,8 +1,8 @@
-# Product Requirements Document — EcoPulse (Versi Hackathon)
+# Product Requirements Document — AANG (Air-Aware Navigation Guidance — Versi Hackathon)
 
 | Atribut | Nilai |
 |---|---|
-| **Nama produk** | EcoPulse |
+| **Nama produk** | AANG (Air-Aware Navigation Guidance) |
 | **Versi dokumen** | 0.2 (adaptasi hackathon dari v0.1) |
 | **Tanggal** | 13 Oktober 2026 |
 | **Tenggat pengumpulan** | 16 Oktober 2026 (jam pasti: TBD, OQ-01) |

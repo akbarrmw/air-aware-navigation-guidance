@@ -1,7 +1,7 @@
-# EcoPulse — Air-Aware Navigation Guidance (AANG)
+# AANG — Air-Aware Navigation Guidance
 
 > **"Pilih rute, kenali paparan."**  
-> Platform navigasi berbasis web yang membantu masyarakat perkotaan memperkirakan akumulasi paparan polusi udara (PM2.5) selama perjalanan dan membandingkan alternatif rute berdasarkan *trade-off* waktu tempuh vs estimasi paparan.
+> Platform navigasi berbasis web yang membantu masyarakat perkotaan memperkirakan akumulasi paparan polusi udara (PM2.5) selama perjalanan dan membandingkan alternatif rute berdasarkan *trade-off* waktu tempuh vs estimasi paparan lingkungan.
 
 ---
 
@@ -9,14 +9,14 @@
 
 Sebelum mulai menulis kode, setiap anggota tim **wajib membaca 3 dokumen panduan utama** berikut:
 
-1. **[Product Requirements Document (`PRD_EcoPulse_Hackathon.md`)](./PRD_EcoPulse_Hackathon.md)**  
-   *Panduan kebutuhan produk, spesifikasi fitur (FR-01 s/d FR-15), algoritma inti (ALG-01 s/d ALG-04), skenario penanganan data tidak tersedia/kedaluwarsa (FR-14), dan batasan klaim (indikator paparan lingkungan, bukan dosis inhalasi klinis).*
+1. **[Product Requirements Document (`PRD_AANG_Hackathon.md`)](./PRD_AANG_Hackathon.md)**  
+   *Panduan kebutuhan produk, spesifikasi fitur (FR-01 s/d FR-15), algoritma inti (ALG-01 s/d ALG-04), penanganan data tidak tersedia/kedaluwarsa (FR-14), dan batasan klaim (indikator paparan lingkungan, bukan dosis inhalasi klinis).*
 
-2. **[Code Specification (`CODE_SPEC_EcoPulse.md`)](./CODE_SPEC_EcoPulse.md)**  
-   *Arsitektur teknis anti-konflik (*Zero Merge Conflict*), kontrak tipe data beku (*frozen types*) di `src/types/`, alur pipeline backend, serta pembagian tugas detail untuk 4 orang.*
+2. **[Code Specification (`CODE_SPEC_AANG.md`)](./CODE_SPEC_AANG.md)**  
+   *Arsitektur teknis anti-konflik (*Zero Merge Conflict*), kontrak tipe data terpusat (*frozen types*) di `src/types/`, alur pipeline backend, penanganan koordinat OSRM/Leaflet, serta pembagian tugas seimbang untuk 4 orang.*
 
 3. **[Git Workflow & Commit SOP (`SKILL.md`)](./SKILL.md)**  
-   *Standar operasional Git bagi seluruh anggota tim dan AI assistant: aturan branch (`feat/*`), Conventional Commits dalam bahasa Inggris, serta batasan izin Git AI.*
+   *Standar operasional Git bagi seluruh anggota tim dan AI assistant: aturan branch (`feat/*`), Conventional Commits dalam bahasa Inggris, serta batasan izin Git AI (dilarang auto push/pull).*
 
 ---
 
@@ -51,12 +51,12 @@ File `.env.local` secara default sudah tersetel ke **mode simulasi**:
 ```env
 DATA_MODE=simulation
 GEOCODER_BASE_URL=https://nominatim.openstreetmap.org
-GEOCODER_USER_AGENT=EcoPulse-Hackathon-App/1.0 (contact@ecopulse.local)
+GEOCODER_USER_AGENT=AANG-Hackathon-App/1.0 (contact@aang.local)
 ROUTING_BASE_URL=https://router.project-osrm.org
 PILOT_CITY_BBOX=[-7.08, 110.32, -6.93, 110.50]
 ```
 > 💡 **Catatan Mode Simulasi (`DATA_MODE=simulation`):**  
-> Aplikasi dapat dijalankan dan diuji langsung secara offline atau tanpa API key. Seluruh data stasiun dan alternatif rute diambil otomatis dari fixture `src/fixtures/`. Mode ini menjaga demo tetap stabil jika layanan eksternal mengalami gangguan.
+> Aplikasi dapat dijalankan dan diuji langsung secara offline atau tanpa API key. Seluruh data stasiun dan alternatif rute diambil otomatis dari fixture `src/fixtures/`. Mode ini menjaga demo tetap stabil jika layanan eksternal mengalami gangguan kuota/jaringan.
 
 ### 4. Menjalankan Aplikasi & Pengujian
 ```bash
@@ -75,14 +75,14 @@ npm run build
 
 ## 👥 Pembagian Tugas Tim (4 Orang) & Matriks Kepemilikan File
 
-Untuk mencegah **merge conflict**, setiap anggota memiliki ruang kerja (*domain*) terisolasi. **Dilarang menyunting file di luar folder hak milik Anda.**
+Mengacu pada arsitektur seimbang di **`CODE_SPEC_AANG.md`**, setiap anggota memiliki ruang kerja (*domain*) terisolasi untuk mencegah *merge conflict*. **Dilarang menyunting file di luar folder hak milik Anda.**
 
 | Peran | Penanggung Jawab | Fokus & Tanggung Jawab Utama | Folder & File Hak Milik |
 |:---|:---|:---|:---|
-| **Person 1** | *Algorithm & Domain Engine* | Konversi AQI, interpolasi IDW (ALG-02), estimasi paparan perjalanan (ALG-01), multi-criteria route scoring (ALG-03), dan rule anjuran (ALG-04). | `src/config/parameters.ts`<br>`src/lib/algorithms/*`<br>`tests/algorithms/*` |
-| **Person 2** | *Backend Services & APIs* | Adapter API (Nominatim, WAQI, OSRM/ORS, Open-Meteo), cache TTL memori, simulation fallback, dan route handler Next.js API-01, API-02, API-04. | `src/config/constants.ts`<br>`src/fixtures/*`<br>`src/lib/services/*`<br>`src/lib/utils/*`<br>`src/app/api/{geocode,air-quality,routes}/*` |
-| **Person 3** | *Database & Supabase Auth* | Skema DDL PostgreSQL, aktivasi Row Level Security (RLS), Supabase Auth helper, API riwayat/consent, serta halaman login, riwayat, dan settings. | `supabase/migrations/*`<br>`src/lib/supabase/*`<br>`src/app/{login,history,settings}/*`<br>`src/components/history/*` |
-| **Person 4** | *Frontend UI/UX & Map Planner* | Design tokens visual, integrasi Leaflet map container (SSR-safe), marker polusi, polyline rute A/B/C, slider preferensi, serta halaman beranda & rute utama. | `src/app/globals.css`<br>`src/app/layout.tsx`<br>`src/app/{page,map,routes,methodology}/*`<br>`src/components/{map,route-planner,common}/*` |
+| **Person 1** | *Integrator, Kontrak & Algoritma* | Konversi AQI, interpolasi IDW (ALG-02), estimasi paparan (ALG-01), scoring multi-kriteria (ALG-03), rule anjuran (ALG-04), serta halaman Beranda & Metodologi. | `src/config/parameters.ts`<br>`src/lib/algorithms/*`<br>`tests/algorithms/*`<br>`src/app/page.tsx`<br>`src/app/methodology/*` |
+| **Person 2** | *Backend Services & API Pipeline* | Adapter eksternal (Nominatim, WAQI, OSRM/ORS, Open-Meteo), cache TTL memori, normalisasi koordinat `[lng,lat]` → `[lat,lng]`, simulation fallback, dan route handler Next.js. | `src/config/constants.ts`<br>`src/fixtures/*`<br>`src/lib/services/*`<br>`src/lib/utils/*`<br>`src/app/api/{geocode,air-quality,routes}/*`<br>`tests/services/*` |
+| **Person 3** | *Database, Auth & Peta Udara* | Skema DDL PostgreSQL & RLS Supabase, Auth helper, API riwayat perjalanan/consent, halaman Login, Riwayat, Pengaturan, serta **Halaman Peta Kualitas Udara (`/map`)**. | `supabase/migrations/*`<br>`src/lib/supabase/*`<br>`src/app/{login,history,settings,map}/*`<br>`src/components/{history,air-map}/*`<br>`tests/database/*` |
+| **Person 4** | *Frontend UI/UX & Core Route Planner* | Desain sistem visual (`globals.css`), pembungkus Leaflet map container (SSR-safe), marker polusi, polyline rute A/B/C, slider preferensi, dan **Perencana Rute Utama (`/routes`)**. | `src/app/globals.css`<br>`src/app/layout.tsx`<br>`src/app/routes/*`<br>`src/components/{map,route-planner,common}/*`<br>`tests/ui/*` |
 
 ---
 
@@ -119,21 +119,25 @@ Jika Anda menggunakan AI coding assistant (Antigravity, Cursor, Copilot, dll.):
 
 ---
 
-## 🚦 Alur Integrasi Harian (Hackathon Timeline)
+## 🚦 Alur Integrasi Harian (Gate Dependensi G0 — G5)
 
 ```
-Hari 1:
-├── Pleno Awal: Kunci kontrak di src/types/ (FROZEN CONTRACT)
-└── Pengerjaan Terisolasi: P1 (Algoritma), P2 (Adapters & Cache), P3 (Auth & DB), P4 (UI & Map)
+Gate G0 (Scaffold & Kontrak Beku):
+├── Kunci kontrak di src/types/ (FROZEN CONTRACT)
+└── Siapkan mockAnalysis dan seluruh stub function agar tidak ada yang saling menunggu
 
-Hari 2:
-├── Integrasi Tahap 1: Merge P1 & P2 -> Endpoint analisis rute (/api/routes/analyze) aktif
-└── Sinkronisasi UI: P4 menghubungkan form pencarian rute ke endpoint P2
+Gate G1 - G2 (Backend & Pipeline Aktif):
+├── P1 menyelesaikan logika murni kalkulasi (ALG-01..04)
+├── P2 menyelesaikan adapter OSRM, WAQI, Nominatim & pipelineService
+└── Endpoint POST /api/routes/analyze aktif
 
-Hari 3:
-├── Integrasi Tahap 2: P3 memasukkan tombol "Simpan Perjalanan" ke kartu hasil rute P4
-├── Pengujian Robustness: Uji skenario data hilang, timeout, & banner "DATA SIMULASI"
-└── Finalisasi: Deploy Vercel, rekam video demo 2-3 menit, dan kumpulkan.
+Gate G3 - G4 (UI Rute & Riwayat Tersambung):
+├── P4 menghubungkan form /routes dan kalkulasi klien decideRoutes ke endpoint P2
+└── P3 menghubungkan fitur simpan trip, login auth, dan riwayat perjalanan
+
+Gate G5 (Pengerasan & Finalisasi):
+├── Uji skenario data hilang (FR-14), verifikasi TC-01..TC-35
+└── Deploy Vercel, rekam video demo 2-3 menit, dan kumpulkan.
 ```
 
 ---
@@ -141,4 +145,4 @@ Hari 3:
 ## ⚠️ Batasan Klaim & Disclaimer Ilmiah
 
 > **PENTING UNTUK PRESENTASI & DEMO:**  
-> Angka akumulasi paparan yang dihasilkan EcoPulse adalah **indikator paparan berbasis lingkungan dan durasi perjalanan ($\mu g/m^3 \cdot \text{menit}$)**, bukan dosis inhalasi individu dan bukan indikator risiko klinis medis. Aplikasi ini tidak mendiagnosis penyakit. Narasi produk berfokus pada **transparansi ketidakpastian dan penjelasan trade-off waktu vs polusi**.
+> Angka akumulasi paparan yang dihasilkan AANG adalah **indikator paparan berbasis lingkungan dan durasi perjalanan ($\mu g/m^3 \cdot \text{menit}$)**, bukan dosis inhalasi individu dan bukan indikator risiko klinis medis. Aplikasi ini tidak mendiagnosis penyakit. Narasi produk berfokus pada **transparansi ketidakpastian dan penjelasan trade-off waktu vs polusi**.

@@ -1,11 +1,11 @@
 ---
-name: ecopulse-git-workflow
-description: Enforces a consistent, feature-based Git workflow, strict permission boundaries, and commit SOP for EcoPulse team members and AI coding assistants.
+name: aang-git-workflow
+description: Enforces a consistent, feature-based Git workflow, strict permission boundaries, and commit SOP for AANG (Air-Aware Navigation Guidance) team members and AI coding assistants.
 ---
 
-# EcoPulse Git Workflow and Commit SOP
+# AANG Git Workflow and Commit SOP
 
-This document defines the official Git workflow, branch management standards, commit conventions, and operational boundaries for all EcoPulse team members and AI coding assistants.
+This document defines the official Git workflow, branch management standards, commit conventions, and operational boundaries for all AANG team members and AI coding assistants.
 
 ---
 
