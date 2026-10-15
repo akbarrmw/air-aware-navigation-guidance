@@ -29,7 +29,7 @@ export default function HistoryPage() {
           </div>
           <h3 className="text-lg font-semibold mb-1">Belum Ada Perjalanan Tersimpan</h3>
           <p className="text-slate-400 text-sm max-w-md mx-auto mb-6">
-            Lakukan analisis perjalanan di halaman Perencanaan Rute, lalu klik tombol "Simpan Perjalanan" untuk mencatat snapshot estimasi di sini.
+            Lakukan analisis perjalanan di halaman Perencanaan Rute, lalu klik tombol &quot;Simpan Perjalanan&quot; untuk mencatat snapshot estimasi di sini.
           </p>
           <Link
             href="/routes"

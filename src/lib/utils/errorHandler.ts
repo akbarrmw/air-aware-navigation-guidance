@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ApiResponse } from '@/types/api';
+import { ApiResponse, ErrorCode } from '@/types/api';
 
 export function createSuccessResponse<T>(data: T, processingTimeMs?: number) {
   const isSimulation = process.env.DATA_MODE === 'simulation';
@@ -17,7 +17,7 @@ export function createSuccessResponse<T>(data: T, processingTimeMs?: number) {
 }
 
 export function createErrorResponse(
-  code: string,
+  code: ErrorCode,
   message: string,
   status: number = 400,
   details?: unknown

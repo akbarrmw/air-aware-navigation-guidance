@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   const q = searchParams.get('q');
 
   if (!q || q.trim().length < 3) {
-    return createErrorResponse('INVALID_QUERY', 'Kata kunci pencarian minimal 3 karakter', 400);
+    return createErrorResponse('VALIDATION_ERROR', 'Kata kunci pencarian minimal 3 karakter', 400);
   }
 
   // Jika mode simulasi atau offline
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!res.ok) {
-      return createErrorResponse('GEOCODE_FAILED', 'Gagal menghubungi penyedia peta geocoding', 502);
+      return createErrorResponse('UPSTREAM_ERROR', 'Gagal menghubungi penyedia peta geocoding', 502);
     }
 
     const json = await res.json();
@@ -49,6 +49,6 @@ export async function GET(request: NextRequest) {
 
     return createSuccessResponse(results);
   } catch (err) {
-    return createErrorResponse('SERVER_ERROR', 'Terjadi kesalahan saat memproses geocoding', 500, err);
+    return createErrorResponse('INTERNAL_ERROR', 'Terjadi kesalahan saat memproses geocoding', 500, err);
   }
 }
