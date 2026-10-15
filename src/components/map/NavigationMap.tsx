@@ -28,8 +28,8 @@ export default function NavigationMap({
   stations = [],
   activeStationId,
   onSelectStation,
-  center = [-6.9932, 110.4203], // Default Semarang Center
-  zoom = 13,
+  center = [-2.5, 118.0], // Default Center Indonesia
+  zoom = 5,
 }: NavigationMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -56,12 +56,17 @@ export default function NavigationMap({
         attributionControl: true,
       });
 
-      // Gunakan CartoDB Voyager / OSM yang memiliki tampilan bersih mirip Google Maps
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 19,
-      }).addTo(map);
+      // Gunakan CartoDB Voyager resmi dengan API Key terotentikasi
+      const cartoKey = process.env.NEXT_PUBLIC_CARTO_API_KEY || 'cb1_4lmq_1_24d6fc3d3b36233537d7eb61';
+      L.tileLayer(
+        `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${cartoKey}`,
+        {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+          subdomains: 'abcd',
+          maxZoom: 19,
+        }
+      ).addTo(map);
 
       // Grup layer untuk elemen interaktif
       layersRef.current.routeLayerGroup = L.layerGroup().addTo(map);
@@ -246,13 +251,13 @@ export default function NavigationMap({
         const icon = L.divIcon({
           className: 'station-div-icon',
           html: `
-            <div style="display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:9999px;background:${aqiColor};color:#ffffff;font-size:11px;font-weight:700;border:2px solid ${isStationActive ? '#ffffff' : 'rgba(255,255,255,0.7)'};box-shadow:0 3px 10px rgba(0,0,0,0.3);transform:${isStationActive ? 'scale(1.15)' : 'scale(1)'};transition:transform 0.2s;cursor:pointer;">
-              <span style="width:6px;height:6px;border-radius:50%;background:#ffffff;"></span>
-              <span>AQI ${aqi}</span>
+            <div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:9999px;background:${aqiColor};color:#ffffff;font-size:11px;font-weight:700;line-height:1.2;border:2px solid ${isStationActive ? '#ffffff' : 'rgba(255,255,255,0.85)'};box-shadow:0 3px 10px rgba(0,0,0,0.35);transform:${isStationActive ? 'scale(1.15)' : 'scale(1)'};transition:transform 0.2s;cursor:pointer;white-space:nowrap;width:max-content;">
+              <span style="width:6px;height:6px;border-radius:50%;background:#ffffff;flex-shrink:0;"></span>
+              <span style="white-space:nowrap;display:inline-block;">AQI ${aqi}</span>
             </div>
           `,
-          iconSize: [68, 26],
-          iconAnchor: [34, 13],
+          iconSize: [96, 26],
+          iconAnchor: [48, 13],
         });
 
         const marker = L.marker([st.lat, st.lng], { icon });
@@ -320,7 +325,7 @@ export default function NavigationMap({
         <button
           onClick={handleResetCenter}
           className="w-10 h-10 bg-white rounded-lg shadow-lg border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-100 active:bg-slate-200 transition"
-          title="Pusatkan ke Semarang"
+          title="Pusatkan Peta"
           aria-label="Pusatkan Peta"
         >
           <svg className="w-5 h-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">

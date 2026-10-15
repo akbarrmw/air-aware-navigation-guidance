@@ -8,30 +8,36 @@ export default function HistoryPage() {
   const sampleTrips = [
     {
       id: 'trip-1',
-      route: 'Kampus Undip Tembalang → Simpang Lima',
+      route: 'Kampus Undip Tembalang → Simpang Lima, Semarang',
       date: 'Hari ini • 15:30 WIB',
-      duration: '15 min',
+      duration: '25 menit',
       distance: '10.8 km',
       saving: '↓ 46% paparan polusi',
-      aqi: 'Sedang (AQI 68)',
+      category: 'Sedang',
+      aqi: 68,
+      aqiColor: '#f59e0b',
     },
     {
       id: 'trip-2',
-      route: 'Jl. Pemuda → Bandara Ahmad Yani',
+      route: 'Jakarta (Monas) → Bandung (Gedung Sate)',
       date: 'Kemarin • 08:15 WIB',
-      duration: '22 min',
-      distance: '8.4 km',
-      saving: '↓ 31% paparan polusi',
-      aqi: 'Baik (AQI 42)',
+      duration: '2 jam 14 menit',
+      distance: '152.4 km',
+      saving: '↓ 38% paparan polusi',
+      category: 'Sedang',
+      aqi: 84,
+      aqiColor: '#f59e0b',
     },
     {
       id: 'trip-3',
-      route: 'Simpang Lima → Kota Lama Semarang',
+      route: 'Simpang Lima → Bandara Ahmad Yani',
       date: '12 Okt 2026 • 19:00 WIB',
-      duration: '14 min',
-      distance: '4.2 km',
-      saving: '↓ 24% paparan polusi',
-      aqi: 'Sedang (AQI 75)',
+      duration: '18 menit',
+      distance: '8.4 km',
+      saving: '↓ 31% paparan polusi',
+      category: 'Baik',
+      aqi: 42,
+      aqiColor: '#10b981',
     },
   ];
 
@@ -67,7 +73,7 @@ export default function HistoryPage() {
             </div>
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
               <span className="text-[11px] text-slate-600 font-semibold block">Jarak Terlindungi</span>
-              <strong className="text-lg font-bold text-slate-900">23.4 km</strong>
+              <strong className="text-lg font-bold text-slate-900">171.6 km</strong>
             </div>
           </div>
 
@@ -78,19 +84,30 @@ export default function HistoryPage() {
                 key={trip.id}
                 className="p-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition flex items-center justify-between gap-4"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
                   <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center flex-none">
                     <RouteIcon size={18} />
                   </div>
-                  <div>
-                    <strong className="block text-sm font-bold text-slate-800">{trip.route}</strong>
-                    <span className="text-xs text-slate-500">
-                      {trip.date} • {trip.duration} ({trip.distance}) • {trip.aqi}
-                    </span>
+                  <div className="min-w-0 flex-1">
+                    <strong className="block text-sm font-bold text-slate-800 truncate">{trip.route}</strong>
+                    <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5 flex-wrap">
+                      <span>{trip.date}</span>
+                      <span>•</span>
+                      <span className="font-semibold text-slate-700">{trip.duration}</span>
+                      <span>({trip.distance})</span>
+                      <span>•</span>
+                      <span
+                        className="px-2 py-0.5 rounded-full text-white font-bold text-[10px] shadow-xs inline-flex items-center gap-1 whitespace-nowrap"
+                        style={{ backgroundColor: trip.aqiColor }}
+                      >
+                        <span className="opacity-90">AQI</span>
+                        <span>{trip.aqi}</span>
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold flex-none">
+                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold whitespace-nowrap flex-none">
                   {trip.saving}
                 </span>
               </div>

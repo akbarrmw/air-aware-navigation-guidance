@@ -20,7 +20,7 @@ import { computeRouteExposure } from '@/lib/algorithms/exposure';
 import { decideRoutes } from '@/lib/algorithms/scoring';
 import { getRouteAlternatives } from './routingService';
 import { getAirQualityStations, AirQualityBounds } from './airQualityService';
-import { isPointWithinPilotArea } from './geocodingService';
+import { isPointWithinPilotArea, isPointWithinIndonesia } from './geocodingService';
 import { DEFAULT_ALGORITHM_PARAMS } from '@/config/parameters';
 
 export interface AnalyzePipelineInput {
@@ -70,14 +70,14 @@ export async function runAnalysisPipeline(
   const isSimulation = process.env.DATA_MODE === 'simulation';
   const warnings: ApiWarning[] = [];
 
-  // 1. Cek cakupan area pilot
-  const originInArea = isPointWithinPilotArea(input.origin.lat, input.origin.lng);
-  const destInArea = isPointWithinPilotArea(input.destination.lat, input.destination.lng);
+  // 1. Cek cakupan area (Seluruh Indonesia)
+  const originInArea = isPointWithinPilotArea(input.origin.lat, input.origin.lng) || isPointWithinIndonesia(input.origin.lat, input.origin.lng);
+  const destInArea = isPointWithinPilotArea(input.destination.lat, input.destination.lng) || isPointWithinIndonesia(input.destination.lat, input.destination.lng);
 
   if (!originInArea || !destInArea) {
     warnings.push({
       code: 'OUTSIDE_COVERAGE',
-      message: 'Rute melintasi luar batas kota pilot. Estimasi polusi mungkin terbatas atau tidak tersedia.',
+      message: 'Rute melintasi luar batas wilayah Indonesia. Estimasi polusi mungkin terbatas atau tidak tersedia.',
     });
   }
 

@@ -18,7 +18,14 @@ export function isPointWithinPilotArea(lat: number, lng: number): boolean {
 }
 
 /**
- * Service Geocoding via Nominatim OpenStreetMap
+ * Mengecek apakah koordinat berada di dalam wilayah Indonesia
+ */
+export function isPointWithinIndonesia(lat: number, lng: number): boolean {
+  return lat >= -11.5 && lat <= 6.5 && lng >= 94.5 && lng <= 141.5;
+}
+
+/**
+ * Service Geocoding via Nominatim OpenStreetMap (Cakupan Seluruh Indonesia)
  * Pemilik: Person 2 (Backend Services)
  */
 export async function searchGeocode(query: string): Promise<GeocodeCandidate[]> {
@@ -31,15 +38,39 @@ export async function searchGeocode(query: string): Promise<GeocodeCandidate[]> 
   if (isSimulation) {
     return [
       {
+        label: `${q} (Monumen Nasional / Monas, Jakarta Pusat)`,
+        lat: -6.1754,
+        lng: 106.8272,
+        withinPilotArea: true,
+      },
+      {
+        label: `${q} (Bundaran HI, Jakarta Pusat)`,
+        lat: -6.1950,
+        lng: 106.8230,
+        withinPilotArea: true,
+      },
+      {
         label: `${q} (Simpang Lima, Semarang)`,
         lat: -6.9928,
         lng: 110.4222,
         withinPilotArea: true,
       },
       {
-        label: `${q} (Kampus Undip Tembalang, Semarang)`,
-        lat: -7.0514,
-        lng: 110.4388,
+        label: `${q} (Gedung Sate, Bandung)`,
+        lat: -6.9025,
+        lng: 107.6186,
+        withinPilotArea: true,
+      },
+      {
+        label: `${q} (Tugu Pahlawan, Surabaya)`,
+        lat: -7.2458,
+        lng: 112.7378,
+        withinPilotArea: true,
+      },
+      {
+        label: `${q} (Malioboro, Yogyakarta)`,
+        lat: -7.7926,
+        lng: 110.3658,
         withinPilotArea: true,
       },
     ];
@@ -52,9 +83,8 @@ export async function searchGeocode(query: string): Promise<GeocodeCandidate[]> 
   }
 
   try {
-    const [minLat, minLng, maxLat, maxLng] = CONSTANTS.PILOT_CITY.BBOX;
-    // Menambahkan viewbox untuk membias pencarian ke area pilot
-    const url = `${CONSTANTS.DEFAULT_GEOCODER_URL}/search?format=json&limit=5&viewbox=${minLng},${maxLat},${maxLng},${minLat}&bounded=0&q=${encodeURIComponent(
+    // Cari lokasi di seluruh wilayah Indonesia (countrycodes=id)
+    const url = `${CONSTANTS.DEFAULT_GEOCODER_URL}/search?format=json&limit=8&countrycodes=id&q=${encodeURIComponent(
       q
     )}`;
 
@@ -79,7 +109,7 @@ export async function searchGeocode(query: string): Promise<GeocodeCandidate[]> 
         label: item.display_name,
         lat,
         lng,
-        withinPilotArea: isPointWithinPilotArea(lat, lng),
+        withinPilotArea: isPointWithinPilotArea(lat, lng) || isPointWithinIndonesia(lat, lng),
       };
     });
 

@@ -14,6 +14,8 @@ import type { AnalyzeRoutesResponseData } from '@/types/analyze';
 import type { RouteLabel } from '@/types/common';
 import type { StationData } from '@/types/air-quality';
 import type { GeocodeCandidate } from '@/lib/services/geocodingService';
+import { formatDuration, formatExtraTime, formatDistance } from '@/lib/utils/formatters';
+import { haversineDistanceMeters, pm25ToAqi } from '@/lib/algorithms';
 
 // Dynamic import Leaflet NavigationMap untuk mencegah SSR issue di Next.js
 const NavigationMap = dynamic(() => import('@/components/map/NavigationMap'), {
@@ -22,20 +24,23 @@ const NavigationMap = dynamic(() => import('@/components/map/NavigationMap'), {
     <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500">
       <div className="flex flex-col items-center gap-3">
         <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-        <span className="text-xs font-semibold text-slate-600">Memuat Peta Navigasi Semarang...</span>
+        <span className="text-xs font-semibold text-slate-600">Memuat Peta Navigasi Indonesia...</span>
       </div>
     </div>
   ),
 });
 
-// Shortcut titik populer di Kota Semarang untuk kemudahan testing 1-klik
+// Shortcut titik populer di berbagai kota Indonesia untuk kemudahan navigasi 1-klik
 const POPULAR_LOCATIONS = [
-  { label: 'Simpang Lima', lat: -6.9928, lng: 110.4222 },
-  { label: 'Undip Tembalang', lat: -7.0514, lng: 110.4388 },
-  { label: 'RSUP Dr. Kariadi', lat: -6.9961, lng: 110.4072 },
-  { label: 'Tugu Muda', lat: -6.9840, lng: 110.4093 },
-  { label: 'Stasiun Tawang', lat: -6.9644, lng: 110.4283 },
-  { label: 'Bandara Ahmad Yani', lat: -6.9744, lng: 110.3756 },
+  { label: 'Jakarta (Monas)', lat: -6.1754, lng: 106.8272 },
+  { label: 'Jakarta (Bundaran HI)', lat: -6.1950, lng: 106.8230 },
+  { label: 'Bandung (Gedung Sate)', lat: -6.9025, lng: 107.6186 },
+  { label: 'Semarang (Simpang Lima)', lat: -6.9928, lng: 110.4222 },
+  { label: 'Yogyakarta (Malioboro)', lat: -7.7926, lng: 110.3658 },
+  { label: 'Surabaya (Tugu Pahlawan)', lat: -7.2458, lng: 112.7378 },
+  { label: 'Bali (Kuta)', lat: -8.7185, lng: 115.1686 },
+  { label: 'Medan (Merdeka)', lat: 3.5908, lng: 98.6781 },
+  { label: 'IKN Nusantara', lat: -0.9634, lng: 116.7088 },
 ];
 
 export default function RoutePlannerPage() {
@@ -48,8 +53,8 @@ export default function RoutePlannerPage() {
   // Autocomplete Suggestions State
   const [originSuggestions, setOriginSuggestions] = useState<GeocodeCandidate[]>([]);
   const [destSuggestions, setDestSuggestions] = useState<GeocodeCandidate[]>([]);
-  const [showOriginDropdown, setShowOriginDropdown] = useState(false);
-  const [showDestDropdown, setShowDestDropdown] = useState(false);
+  // Menggunakan satu state aktif agar origin dan destination mutually exclusive (tidak pernah terbuka bersamaan)
+  const [activeDropdown, setActiveDropdown] = useState<'origin' | 'destination' | null>(null);
   const [searchingOrigin, setSearchingOrigin] = useState(false);
   const [searchingDest, setSearchingDest] = useState(false);
 
@@ -69,6 +74,18 @@ export default function RoutePlannerPage() {
 
   const originInputRef = useRef<HTMLInputElement>(null);
   const destInputRef = useRef<HTMLInputElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Listener tutup dropdown saat klik di luar area pencarian
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setActiveDropdown(null);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // 1. Fetch Real Stations on mount untuk visualisasi stasiun udara di peta
   useEffect(() => {
@@ -99,7 +116,7 @@ export default function RoutePlannerPage() {
         const json = await res.json();
         if (json.success && Array.isArray(json.data)) {
           setOriginSuggestions(json.data);
-          setShowOriginDropdown(true);
+          setActiveDropdown((curr) => (curr === 'destination' ? 'destination' : 'origin'));
         }
       } catch {
         // Abaikan error jaringan sesaat
@@ -124,7 +141,7 @@ export default function RoutePlannerPage() {
         const json = await res.json();
         if (json.success && Array.isArray(json.data)) {
           setDestSuggestions(json.data);
-          setShowDestDropdown(true);
+          setActiveDropdown((curr) => (curr === 'origin' ? 'origin' : 'destination'));
         }
       } catch {
         // Abaikan error jaringan sesaat
@@ -146,8 +163,7 @@ export default function RoutePlannerPage() {
   const handleSearchRoutes = async () => {
     setLoading(true);
     setErrorMessage(null);
-    setShowOriginDropdown(false);
-    setShowDestDropdown(false);
+    setActiveDropdown(null);
 
     try {
       const res = await fetch('/api/routes/analyze', {
@@ -183,6 +199,7 @@ export default function RoutePlannerPage() {
 
   // Handler Swap Lokasi Asal & Tujuan
   const handleSwap = () => {
+    setActiveDropdown(null);
     const tempInput = originInput;
     const tempCoord = originCoord;
     setOriginInput(destInput);
@@ -195,6 +212,54 @@ export default function RoutePlannerPage() {
   const activeRoute = result?.routes.find((r) => r.label === selectedRouteLabel) || result?.routes[0];
   const recommendedRoute = result?.routes.find((r) => r.label === result?.recommendedRouteLabel) || result?.routes[0];
   const fastestRoute = result?.routes.find((r) => r.isFastest) || result?.routes[0];
+
+  // Stasiun kualitas udara terdekat yang dilalui rute terpilih
+  const routeStations = React.useMemo(() => {
+    if (!activeRoute) return [];
+
+    // 1. Ambil stasiun yang dilalui dari hasil algoritma IDW rute
+    if (activeRoute.estimate?.stationsUsed && activeRoute.estimate.stationsUsed.length > 0) {
+      return activeRoute.estimate.stationsUsed.map((st) => ({
+        stationId: st.stationId,
+        stationName: st.stationName,
+        distanceMeters: st.distanceMeters,
+        pm25: st.pm25,
+        dataType: st.dataType,
+      }));
+    }
+
+    // 2. Fallback cerdas: jika stationsUsed belum terisi, cari 3 stasiun terdekat dari titik koridor rute
+    if (stations.length > 0) {
+      const coords = (activeRoute.geometry?.coordinates as [number, number][]) || [];
+      const samplePoints: [number, number][] =
+        coords.length > 0
+          ? [coords[0], coords[Math.floor(coords.length / 2)], coords[coords.length - 1]]
+          : [
+              [originCoord.lat, originCoord.lng],
+              [destCoord.lat, destCoord.lng],
+            ];
+
+      return stations
+        .map((st) => {
+          let minDistance = Infinity;
+          for (const [lat, lng] of samplePoints) {
+            const d = haversineDistanceMeters(st.lat, st.lng, lat, lng);
+            if (d < minDistance) minDistance = d;
+          }
+          return {
+            stationId: st.stationId,
+            stationName: st.stationName,
+            distanceMeters: minDistance,
+            pm25: st.pm25Concentration ?? 25,
+            dataType: st.dataType,
+          };
+        })
+        .sort((a, b) => a.distanceMeters - b.distanceMeters)
+        .slice(0, 3);
+    }
+
+    return [];
+  }, [activeRoute, stations, originCoord, destCoord]);
 
   return (
     <div className="relative w-full h-[calc(100vh-56px)] mt-[56px] overflow-hidden bg-slate-100">
@@ -250,7 +315,7 @@ export default function RoutePlannerPage() {
         </div>
 
         {/* Directions Search Box */}
-        <div className="p-4 border-b border-slate-200/80 relative">
+        <div ref={searchContainerRef} className="p-4 border-b border-slate-200/80 relative">
           <div className="flex items-center gap-3">
             {/* Visual Dots & Connector */}
             <div className="flex flex-col items-center justify-between h-[76px] py-2">
@@ -267,8 +332,12 @@ export default function RoutePlannerPage() {
                   ref={originInputRef}
                   type="text"
                   value={originInput}
-                  onChange={(e) => setOriginInput(e.target.value)}
-                  onFocus={() => setShowOriginDropdown(true)}
+                  onChange={(e) => {
+                    setOriginInput(e.target.value);
+                    setActiveDropdown('origin');
+                  }}
+                  onFocus={() => setActiveDropdown('origin')}
+                  onClick={() => setActiveDropdown('origin')}
                   placeholder="Pilih titik keberangkatan..."
                   className="w-full bg-slate-100 hover:bg-slate-100/80 focus:bg-white text-slate-800 text-xs font-medium px-3 py-2 rounded-lg border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition"
                 />
@@ -276,9 +345,9 @@ export default function RoutePlannerPage() {
                   <span className="absolute right-2.5 top-2.5 w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                 )}
 
-                {/* Autocomplete Dropdown Origin */}
-                {showOriginDropdown && originSuggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-30 max-h-48 overflow-y-auto custom-scrollbar">
+                {/* Autocomplete Dropdown Origin (Hanya tampil saat activeDropdown === 'origin') */}
+                {activeDropdown === 'origin' && originSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-50 max-h-48 overflow-y-auto custom-scrollbar">
                     {originSuggestions.map((item, idx) => (
                       <button
                         key={idx}
@@ -286,7 +355,7 @@ export default function RoutePlannerPage() {
                         onClick={() => {
                           setOriginInput(item.label.split(',')[0]);
                           setOriginCoord({ lat: item.lat, lng: item.lng });
-                          setShowOriginDropdown(false);
+                          setActiveDropdown(null);
                         }}
                         className="w-full text-left px-3 py-2 text-xs hover:bg-emerald-50 border-b border-slate-100 last:border-none flex items-start gap-2 text-slate-700"
                       >
@@ -304,8 +373,12 @@ export default function RoutePlannerPage() {
                   ref={destInputRef}
                   type="text"
                   value={destInput}
-                  onChange={(e) => setDestInput(e.target.value)}
-                  onFocus={() => setShowDestDropdown(true)}
+                  onChange={(e) => {
+                    setDestInput(e.target.value);
+                    setActiveDropdown('destination');
+                  }}
+                  onFocus={() => setActiveDropdown('destination')}
+                  onClick={() => setActiveDropdown('destination')}
                   placeholder="Pilih tujuan..."
                   className="w-full bg-slate-100 hover:bg-slate-100/80 focus:bg-white text-slate-800 text-xs font-medium px-3 py-2 rounded-lg border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition"
                 />
@@ -313,9 +386,9 @@ export default function RoutePlannerPage() {
                   <span className="absolute right-2.5 top-2.5 w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                 )}
 
-                {/* Autocomplete Dropdown Destination */}
-                {showDestDropdown && destSuggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-30 max-h-48 overflow-y-auto custom-scrollbar">
+                {/* Autocomplete Dropdown Destination (Hanya tampil saat activeDropdown === 'destination') */}
+                {activeDropdown === 'destination' && destSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-50 max-h-48 overflow-y-auto custom-scrollbar">
                     {destSuggestions.map((item, idx) => (
                       <button
                         key={idx}
@@ -323,7 +396,7 @@ export default function RoutePlannerPage() {
                         onClick={() => {
                           setDestInput(item.label.split(',')[0]);
                           setDestCoord({ lat: item.lat, lng: item.lng });
-                          setShowDestDropdown(false);
+                          setActiveDropdown(null);
                         }}
                         className="w-full text-left px-3 py-2 text-xs hover:bg-emerald-50 border-b border-slate-100 last:border-none flex items-start gap-2 text-slate-700"
                       >
@@ -359,6 +432,7 @@ export default function RoutePlannerPage() {
                 onClick={() => {
                   setDestInput(loc.label);
                   setDestCoord({ lat: loc.lat, lng: loc.lng });
+                  setActiveDropdown(null);
                 }}
                 className="px-2 py-0.5 rounded-full bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-slate-600 whitespace-nowrap transition"
               >
@@ -434,11 +508,13 @@ export default function RoutePlannerPage() {
                 const isSelected = route.label === selectedRouteLabel;
                 const isRecommended = route.label === result.recommendedRouteLabel;
                 const isCleanAir = !route.isFastest;
-                const minutes = Math.round(route.durationSeconds / 60);
-                const km = (route.distanceMeters / 1000).toFixed(1);
-                const exposureSaved = route.comparison.exposureDeltaPercent != null
-                  ? Math.abs(Math.round(route.comparison.exposureDeltaPercent))
-                  : null;
+                const durationFormatted = formatDuration(route.durationSeconds);
+                const km = formatDistance(route.distanceMeters);
+                const exposureSaved =
+                  route.comparison.exposureDeltaPercent != null
+                    ? Math.abs(Math.round(route.comparison.exposureDeltaPercent))
+                    : null;
+                const stationsCount = route.estimate?.stationsUsed?.length || 0;
 
                 return (
                   <button
@@ -471,13 +547,20 @@ export default function RoutePlannerPage() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-3 text-xs text-slate-600 font-medium">
-                      <span className="text-base font-extrabold text-slate-900">{minutes} mnt</span>
+                    <div className="flex items-center gap-2 text-xs text-slate-600 font-medium flex-wrap">
+                      <span className="text-base font-extrabold text-slate-900 whitespace-nowrap">
+                        {durationFormatted}
+                      </span>
                       <span>•</span>
-                      <span>{km} km</span>
+                      <span className="whitespace-nowrap">{km}</span>
                       {route.comparison.extraSeconds > 0 && (
-                        <span className="text-amber-600 font-bold bg-amber-50 px-1.5 py-0.5 rounded text-[11px]">
-                          +{Math.round(route.comparison.extraSeconds / 60)} mnt
+                        <span className="text-amber-600 font-bold bg-amber-50 px-1.5 py-0.5 rounded text-[11px] whitespace-nowrap">
+                          {formatExtraTime(route.comparison.extraSeconds)}
+                        </span>
+                      )}
+                      {stationsCount > 0 && (
+                        <span className="text-slate-500 text-[11px] bg-slate-100 px-1.5 py-0.5 rounded whitespace-nowrap ml-auto">
+                          📡 {stationsCount} stasiun dilalui
                         </span>
                       )}
                     </div>
@@ -486,11 +569,11 @@ export default function RoutePlannerPage() {
                     <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
                       <span className="text-slate-500">Estimasi Paparan:</span>
                       <div className="flex items-center gap-1.5">
-                        <strong className="text-slate-800 font-bold">
+                        <strong className="text-slate-800 font-bold whitespace-nowrap">
                           {route.estimate.exposureIndexPm25 ?? '-'} <small className="text-[10px]">µg/m³·mnt</small>
                         </strong>
                         {exposureSaved != null && exposureSaved > 0 && isCleanAir && (
-                          <span className="text-emerald-700 font-bold text-[11px] bg-emerald-100 px-1.5 py-0.5 rounded">
+                          <span className="text-emerald-700 font-bold text-[11px] bg-emerald-100 px-1.5 py-0.5 rounded whitespace-nowrap">
                             ↓ {exposureSaved}% Lebih Bersih
                           </span>
                         )}
@@ -508,17 +591,21 @@ export default function RoutePlannerPage() {
         </div>
       </div>
 
-      {/* 3. Google Maps Style Bottom / Floating Route Details Card */}
+      {/* 3. Google Maps Style Right Floating Route Details Panel */}
       {showDetailsDrawer && activeRoute && (
-        <div className="absolute bottom-6 left-4 right-4 md:left-[450px] md:right-8 z-20 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 p-4 transition-all animate-slide-down">
-          <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[11px]">
+        <div className="absolute z-20 transition-all duration-300 animate-slide-down
+          bottom-4 left-4 right-4 max-h-[55vh]
+          md:bottom-auto md:left-auto md:top-4 md:right-4 md:w-[420px] md:max-h-[calc(100vh-5rem)]
+          bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 p-4 overflow-y-auto custom-scrollbar flex flex-col gap-3"
+        >
+          <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[11px] whitespace-nowrap">
                   Rute {activeRoute.label} Terpilih
                 </span>
-                <span className="text-xs text-slate-500 font-medium">
-                  {Math.round(activeRoute.durationSeconds / 60)} menit ({((activeRoute.distanceMeters) / 1000).toFixed(1)} km)
+                <span className="text-xs text-slate-500 font-medium whitespace-nowrap">
+                  {formatDuration(activeRoute.durationSeconds)} ({formatDistance(activeRoute.distanceMeters)})
                 </span>
               </div>
               <h3 className="text-sm font-bold text-slate-900 leading-snug">
@@ -528,45 +615,121 @@ export default function RoutePlannerPage() {
 
             <button
               onClick={() => setShowDetailsDrawer(false)}
-              className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+              className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition flex-shrink-0"
               aria-label="Tutup Detail"
+              title="Tutup Panel Detail"
             >
               <CloseIcon size={18} />
             </button>
           </div>
 
-          {/* Actionable Health Mitigation Tips */}
-          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-            {(result?.actionMessages || [
-              {
-                ruleId: 'RULE-01',
-                message: 'Tutup rapat kaca jendela kendaraan di area jalan padat.',
-                basis: 'Menghindari paparan partikulat PM2.5 tinggi.',
-              },
-              {
-                ruleId: 'RULE-02',
-                message: 'Gunakan mode resirkulasi udara AC.',
-                basis: 'Mencegah infiltrasi asap knalpot luar ke dalam kabin.',
-              },
-            ]).map((msg) => (
-              <div key={msg.ruleId} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
-                <span className="text-emerald-600 mt-0.5">🛡️</span>
-                <div>
-                  <strong className="block text-slate-800 font-semibold">{msg.message}</strong>
-                  <span className="text-[11px] text-slate-500">{msg.basis}</span>
+          {/* Stasiun Kualitas Udara Terdekat yang Dilalui */}
+          {routeStations.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                  <span>📡</span>
+                  <span>Stasiun Terdekat yang Dilalui</span>
                 </div>
+                <span className="text-[11px] text-slate-500 font-medium">
+                  {routeStations.length} stasiun
+                </span>
               </div>
-            ))}
+
+              <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto custom-scrollbar">
+                {routeStations.map((st, idx) => {
+                  const aqi = pm25ToAqi(st.pm25) ?? Math.round(st.pm25 * 2.2);
+                  const isModel =
+                    st.dataType === 'model_fallback' ||
+                    (st.stationName || '').includes('Open-Meteo') ||
+                    (st.stationName || '').includes('Model');
+
+                  let aqiColor = '#10b981';
+                  if (aqi > 300) aqiColor = '#7f1d1d';
+                  else if (aqi > 200) aqiColor = '#8b5cf6';
+                  else if (aqi > 150) aqiColor = '#ef4444';
+                  else if (aqi > 100) aqiColor = '#f97316';
+                  else if (aqi > 50) aqiColor = '#f59e0b';
+
+                  return (
+                    <div
+                      key={st.stationId || idx}
+                      className="p-2.5 rounded-xl bg-slate-50/90 hover:bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-2 text-xs"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase tracking-wider ${
+                              isModel
+                                ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                                : 'bg-blue-100 text-blue-700 border border-blue-200'
+                            }`}
+                          >
+                            {isModel ? 'Open-Meteo' : 'WAQI'}
+                          </span>
+                          <strong className="text-slate-800 font-semibold truncate block">
+                            {st.stationName}
+                          </strong>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5 truncate">
+                          <span>{formatDistance(st.distanceMeters)} dari rute</span>
+                          <span>•</span>
+                          <span>PM2.5: {st.pm25.toFixed(1)} µg/m³</span>
+                        </div>
+                      </div>
+
+                      {/* Single Line Stable AQI Badge */}
+                      <span
+                        className="px-2 py-0.5 rounded-full text-white font-bold text-xs shadow-xs flex items-center gap-1 whitespace-nowrap flex-shrink-0"
+                        style={{ backgroundColor: aqiColor }}
+                      >
+                        <span className="opacity-90">AQI</span>
+                        <span>{aqi}</span>
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Actionable Health Mitigation Tips */}
+          <div className="pt-2 border-t border-slate-100">
+            <span className="text-[11px] font-bold text-slate-600 block mb-1.5">
+              🛡️ Panduan Mitigasi Kesehatan
+            </span>
+            <div className="grid grid-cols-1 gap-2 text-xs">
+              {(result?.actionMessages || [
+                {
+                  ruleId: 'RULE-01',
+                  message: 'Tutup rapat kaca jendela kendaraan di area jalan padat.',
+                  basis: 'Menghindari paparan partikulat PM2.5 tinggi.',
+                },
+                {
+                  ruleId: 'RULE-02',
+                  message: 'Gunakan mode resirkulasi udara AC.',
+                  basis: 'Mencegah infiltrasi asap knalpot luar ke dalam kabin.',
+                },
+              ]).map((msg) => (
+                <div key={msg.ruleId} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
+                  <span className="text-emerald-600 mt-0.5">🛡️</span>
+                  <div>
+                    <strong className="block text-slate-800 font-semibold">{msg.message}</strong>
+                    <span className="text-[11px] text-slate-500">{msg.basis}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Action Buttons: Export to Google Maps & Save Trip */}
-          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+          <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
             <button
               onClick={() => {
                 const url = `https://www.google.com/maps/dir/?api=1&origin=${originCoord.lat},${originCoord.lng}&destination=${destCoord.lat},${destCoord.lng}&travelmode=driving`;
                 window.open(url, '_blank');
               }}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold flex items-center gap-2 transition shadow-sm"
+              className="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition shadow-sm"
             >
               <NavigationIcon size={14} />
               <span>Buka Petunjuk di Google Maps ↗</span>
@@ -574,7 +737,7 @@ export default function RoutePlannerPage() {
 
             <button
               onClick={() => setSavedTrip(!savedTrip)}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border transition ${
+              className={`w-full py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition ${
                 savedTrip
                   ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
                   : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'

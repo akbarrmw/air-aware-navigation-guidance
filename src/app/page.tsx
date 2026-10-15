@@ -8,7 +8,7 @@ export default function HomePage() {
 
       <div className="max-w-5xl mx-auto px-4 text-center relative z-10">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-6">
-          <span>✨</span> EcoPulse v0.2 — Solusi Mobilitas Perkotaan Berkelanjutan
+          <span>✨</span> AANG — Air-Aware Navigation Guidance
         </div>
 
         <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white mb-6">
