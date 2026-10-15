@@ -1,56 +1,36 @@
-import { NextRequest } from 'next/server';
-import { z } from 'zod';
-import { createSuccessResponse, createErrorResponse } from '@/lib/utils/errorHandler';
+/**
+ * @file route.ts
+ * @description Endpoint analisis rute dan estimasi paparan polusi udara (POST /api/routes/analyze).
+ * @author Person 2 (Backend & External APIs) / Refactored with withApiHandler by Person 1
+ * @module app/api/routes/analyze/route
+ * @see CODE_SPEC_AANG.md Bagian 6 & 11 (Gate G0)
+ */
+
+import { withApiHandler } from '@/lib/server/withApiHandler';
+import { AnalyzeRoutesRequestSchema, type AnalyzeRoutesRequestInput } from '@/types/schemas';
 import { runAnalysisPipeline } from '@/lib/services/pipelineService';
+import type { AnalyzeRoutesResponseData } from '@/types/analyze';
 
-const analyzeSchema = z.object({
-  origin: z.object({
-    lat: z.number().min(-90).max(90),
-    lng: z.number().min(-180).max(180),
-  }),
-  destination: z.object({
-    lat: z.number().min(-90).max(90),
-    lng: z.number().min(-180).max(180),
-  }),
-  preferences: z
-    .object({
-      exposureWeight: z.number().min(0).max(1).default(0.5),
-      maxExtraTimePercent: z.number().min(0).max(100).nullable().default(30),
-    })
-    .default({ exposureWeight: 0.5, maxExtraTimePercent: 30 }),
-});
-
-export async function POST(request: NextRequest) {
-  const startTime = Date.now();
-  try {
-    const body = await request.json();
-    const parsed = analyzeSchema.safeParse(body);
-
-    if (!parsed.success) {
-      return createErrorResponse(
-        'VALIDATION_ERROR',
-        'Data masukan rute atau preferensi tidak valid',
-        400,
-        parsed.error.issues
-      );
-    }
-
-    const { origin, destination, preferences } = parsed.data;
+/**
+ * Handler POST /api/routes/analyze
+ * Menerima titik origin, destination, dan preferensi rute, lalu mengembalikan analisis komparatif rute A/B/C.
+ */
+export const POST = withApiHandler<AnalyzeRoutesResponseData, AnalyzeRoutesRequestInput>(
+  async ({ body }) => {
+    const { origin, destination, preferences } = body;
 
     const result = await runAnalysisPipeline({
-      origin,
-      destination,
-      preferences,
+      origin: { lat: origin.lat, lng: origin.lng },
+      destination: { lat: destination.lat, lng: destination.lng },
+      preferences: {
+        exposureWeight: preferences.exposureWeight,
+        maxExtraTimePercent: preferences.maxExtraTimePercent,
+      },
     });
 
-    const elapsed = Date.now() - startTime;
-    return createSuccessResponse(result, elapsed);
-  } catch (err) {
-    return createErrorResponse(
-      'ANALYZE_ERROR',
-      'Terjadi kendala saat menganalisis alternatif rute dan polusi udara',
-      500,
-      err
-    );
+    return result;
+  },
+  {
+    bodySchema: AnalyzeRoutesRequestSchema,
   }
-}
+);

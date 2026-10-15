@@ -1,12 +1,30 @@
-export interface RouteGeometry {
-  coordinates: [number, number][]; // [lat, lng][]
-}
+/**
+ * @file routing.ts
+ * @description Kontrak data untuk kandidat rute navigasi yang dihasilkan dari upstream OSRM.
+ * @author Person 1 (Core Algorithm & System Integration)
+ * @module types/routing
+ * @see CODE_SPEC_AANG.md Bagian 3.4
+ */
 
+import type { RouteLabel, LatLngTuple } from './common';
+
+/**
+ * Representasi rute navigasi alternatif yang dihasilkan dari mesin routing (OSRM).
+ */
 export interface RouteCandidate {
-  id: string;                      // misal 'route-0'
-  label: 'A' | 'B' | 'C';
+  /** Identifier unik internal untuk rute (contoh: 'route-0', 'route-1') */
+  id: string;
+  /** Label rute alternatif: 'A' (biasanya tercepat), 'B', atau 'C' */
+  label: RouteLabel;
+  /** Jarak tempuh total rute dalam meter */
   distanceMeters: number;
+  /** Estimasi durasi tempuh perjalanan dalam detik */
   durationSeconds: number;
-  geometry: RouteGeometry;
+  /** Geometri lintasan rute dalam bentuk array koordinat [latitude, longitude] */
+  geometry: {
+    /** Array titik koordinat lintasan dengan urutan WAJIB [lat, lng] */
+    coordinates: LatLngTuple[];
+  };
+  /** Penanda apakah rute ini memiliki durasi tersingkat dibanding alternatif lain */
   isFastest: boolean;
 }

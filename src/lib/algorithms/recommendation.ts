@@ -25,7 +25,7 @@ export function generateRecommendations(
   }
 
   // RULE-01: Kategori Baik
-  if (recommendedEstimate.category === 'Baik') {
+  if (recommendedEstimate.category === 'good') {
     messages.push({
       ruleId: 'RULE-01',
       severity: 'info',
@@ -35,7 +35,7 @@ export function generateRecommendations(
   }
 
   // RULE-02: Kategori Sedang
-  if (recommendedEstimate.category === 'Sedang') {
+  if (recommendedEstimate.category === 'moderate') {
     messages.push({
       ruleId: 'RULE-02',
       severity: 'info',
@@ -46,10 +46,10 @@ export function generateRecommendations(
 
   // RULE-03: Kategori di atas Sedang
   if (
-    recommendedEstimate.category === 'Tidak Sehat bagi Sensitif' ||
-    recommendedEstimate.category === 'Tidak Sehat' ||
-    recommendedEstimate.category === 'Sangat Tidak Sehat' ||
-    recommendedEstimate.category === 'Berbahaya'
+    recommendedEstimate.category === 'unhealthySensitive' ||
+    recommendedEstimate.category === 'unhealthy' ||
+    recommendedEstimate.category === 'veryUnhealthy' ||
+    recommendedEstimate.category === 'hazardous'
   ) {
     messages.push({
       ruleId: 'RULE-03',
@@ -62,7 +62,7 @@ export function generateRecommendations(
   // RULE-04: Durasi panjang (>= 45 menit) pada kualitas udara Sedang atau lebih
   if (
     durationMinutes >= ECOPULSE_PARAMS.PAR_14_LONG_TRIP_MINUTES &&
-    recommendedEstimate.category !== 'Baik'
+    recommendedEstimate.category !== 'good'
   ) {
     messages.push({
       ruleId: 'RULE-04',
