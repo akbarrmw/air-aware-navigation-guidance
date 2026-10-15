@@ -1,25 +1,51 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { StationData } from '@/types/air-quality';
-import { ApiResponse } from '@/types/api';
+import dynamic from 'next/dynamic';
+import Link from 'next/link';
+import {
+  SearchIcon,
+  CloseIcon,
+  NavigationIcon,
+} from '@/components/common/Icons';
+import type { StationData } from '@/types/air-quality';
+import type { ApiResponse } from '@/types/api';
+import { AQI_CATEGORIES } from '@/types/aqiScale';
 
-export default function MapPage() {
+// Dynamic import Leaflet NavigationMap untuk mencegah SSR error
+const NavigationMap = dynamic(() => import('@/components/map/NavigationMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs font-semibold text-slate-600">Memuat Peta Pemantauan Udara...</span>
+      </div>
+    </div>
+  ),
+});
+
+export default function AirQualityMapPage() {
   const [stations, setStations] = useState<StationData[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedStation, setSelectedStation] = useState<StationData | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCategory, setFilterCategory] = useState<'all' | 'good' | 'moderate' | 'unhealthy'>('all');
+  const [loading, setLoading] = useState(true);
 
+  // Fetch real stations from API
   useEffect(() => {
     async function loadStations() {
       try {
         const res = await fetch('/api/air-quality/stations');
         const json: ApiResponse<StationData[]> = await res.json();
-        if (json.success && json.data) {
+        if (json.success && Array.isArray(json.data)) {
           setStations(json.data);
-          setSelectedStation(json.data[0] || null);
+          if (json.data.length > 0) {
+            setSelectedStation(json.data[0]);
+          }
         }
-      } catch (e) {
-        console.error(e);
+      } catch (err) {
+        console.error('Gagal memuat stasiun:', err);
       } finally {
         setLoading(false);
       }
@@ -27,89 +53,220 @@ export default function MapPage() {
     loadStations();
   }, []);
 
+  // Filter stations based on search query and category
+  const filteredStations = stations.filter((st) => {
+    const matchesSearch =
+      st.stationName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (st.sourceName || '').toLowerCase().includes(searchQuery.toLowerCase());
+
+    const aqi = st.aqi ?? Math.round((st.pm25Concentration ?? 25) * 2.2);
+
+    let matchesCategory = true;
+    if (filterCategory === 'good') matchesCategory = aqi <= 50;
+    else if (filterCategory === 'moderate') matchesCategory = aqi > 50 && aqi <= 100;
+    else if (filterCategory === 'unhealthy') matchesCategory = aqi > 100;
+
+    return matchesSearch && matchesCategory;
+  });
+
+  // Ambil metadata kategori AQI stasiun terpilih
+  const activeAqi = selectedStation
+    ? selectedStation.aqi ?? Math.round((selectedStation.pm25Concentration ?? 25) * 2.2)
+    : 50;
+  const activeCategory =
+    AQI_CATEGORIES.find((cat) => {
+      if (cat.code === 'good' && activeAqi <= 50) return true;
+      if (cat.code === 'moderate' && activeAqi > 50 && activeAqi <= 100) return true;
+      if (cat.code === 'unhealthySensitive' && activeAqi > 100 && activeAqi <= 150) return true;
+      if (cat.code === 'unhealthy' && activeAqi > 150 && activeAqi <= 200) return true;
+      if (cat.code === 'veryUnhealthy' && activeAqi > 200 && activeAqi <= 300) return true;
+      if (cat.code === 'hazardous' && activeAqi > 300) return true;
+      return false;
+    }) || AQI_CATEGORIES[0];
+
   return (
-    <div className="flex flex-col md:flex-row h-[calc(100vh-4rem)] bg-slate-950 text-white">
-      {/* Side Panel */}
-      <div className="w-full md:w-96 bg-slate-900 border-r border-slate-800 p-6 overflow-y-auto">
-        <h1 className="text-xl font-bold text-emerald-400 mb-1">Stasiun Kualitas Udara</h1>
-        <p className="text-xs text-slate-400 mb-6">Kota Pilot: Semarang dan sekitarnya</p>
-
-        {loading ? (
-          <div className="text-center py-12 text-slate-500 text-sm animate-pulse">
-            Memuat data stasiun pemantau...
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {stations.map((st) => (
-              <div
-                key={st.stationId}
-                onClick={() => setSelectedStation(st)}
-                className={`p-4 rounded-xl border cursor-pointer transition ${
-                  selectedStation?.stationId === st.stationId
-                    ? 'bg-slate-800 border-emerald-500 shadow-md'
-                    : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-sm">{st.stationName}</h3>
-                  <span
-                    className={`px-2 py-0.5 rounded text-xs font-bold ${
-                      st.aqi && st.aqi <= 50
-                        ? 'bg-emerald-950 text-emerald-400 border border-emerald-600'
-                        : st.aqi && st.aqi <= 100
-                        ? 'bg-amber-950 text-amber-400 border border-amber-600'
-                        : 'bg-orange-950 text-orange-400 border border-orange-600'
-                    }`}
-                  >
-                    AQI {st.aqi ?? '-'}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs text-slate-400">
-                  <div>PM2.5: <span className="text-slate-200 font-medium">{st.pm25Concentration} µg/m³</span></div>
-                  <div>Status: <span className="text-emerald-400 font-medium">{st.freshness}</span></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {selectedStation && (
-          <div className="mt-6 pt-6 border-t border-slate-800">
-            <h4 className="text-xs uppercase font-bold tracking-wider text-slate-400 mb-2">
-              Detail Stasiun Terpilih
-            </h4>
-            <div className="space-y-1 text-xs text-slate-300">
-              <p><strong className="text-white">Sumber:</strong> {selectedStation.sourceName}</p>
-              <p><strong className="text-white">Waktu Observasi:</strong> {new Date(selectedStation.observedAt).toLocaleTimeString()}</p>
-              <p><strong className="text-white">Usia Data:</strong> {selectedStation.ageMinutes} menit yang lalu</p>
-              <p><strong className="text-white">Koordinat:</strong> {selectedStation.lat}, {selectedStation.lng}</p>
-            </div>
-          </div>
-        )}
+    <div className="relative w-full h-[calc(100vh-56px)] mt-[56px] overflow-hidden bg-slate-100">
+      {/* 1. Real Leaflet Map */}
+      <div className="w-full h-full absolute inset-0 z-0">
+        <NavigationMap
+          stations={filteredStations}
+          activeStationId={selectedStation?.stationId}
+          onSelectStation={(st) => setSelectedStation(st)}
+          center={selectedStation ? [selectedStation.lat, selectedStation.lng] : [-6.9932, 110.4203]}
+          zoom={13}
+        />
       </div>
 
-      {/* Map View Placeholder / Interactive Leaflet Container */}
-      <div className="flex-1 relative bg-slate-950 flex items-center justify-center p-8">
-        <div className="text-center max-w-md">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-3xl mx-auto mb-4">
-            🗺️
+      {/* 2. Google Maps Style Floating Search & Station List Panel */}
+      <div className="absolute top-4 left-4 z-20 w-[380px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-5rem)] flex flex-col bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden">
+        {/* Search Bar */}
+        <div className="p-3.5 border-b border-slate-200/80">
+          <div className="flex items-center gap-2 bg-slate-100 hover:bg-slate-100/80 focus-within:bg-white rounded-xl px-3 py-2 border border-slate-200 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 transition">
+            <SearchIcon size={16} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari stasiun pemantauan udara..."
+              className="w-full bg-transparent text-xs text-slate-800 placeholder-slate-400 outline-none font-medium"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="text-slate-400 hover:text-slate-600">
+                <CloseIcon size={14} />
+              </button>
+            )}
           </div>
-          <h3 className="text-lg font-bold text-white mb-2">Peta Kualitas Udara (Leaflet Container)</h3>
-          <p className="text-slate-400 text-sm mb-4 leading-relaxed">
-            Menampilkan {stations.length} stasiun kualitas udara aktif di kota Semarang. Person 4 dapat mengintegrasikan wrapper Leaflet di <code className="text-emerald-300">src/components/map/MapContainer.tsx</code>.
-          </p>
-          <div className="inline-flex gap-2">
-            <span className="px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-xs text-slate-300">
-              ● Hijau: Baik (0-50)
-            </span>
-            <span className="px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-xs text-slate-300">
-              ● Kuning: Sedang (51-100)
-            </span>
-            <span className="px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-xs text-slate-300">
-              ● Jingga: Sensitif (101-150)
-            </span>
+
+          {/* Filter Chips */}
+          <div className="flex items-center gap-1.5 mt-2.5 overflow-x-auto pb-1 custom-scrollbar text-[11px]">
+            <button
+              onClick={() => setFilterCategory('all')}
+              className={`px-2.5 py-1 rounded-full font-semibold border transition ${
+                filterCategory === 'all'
+                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                  : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+              }`}
+            >
+              Semua ({stations.length})
+            </button>
+            <button
+              onClick={() => setFilterCategory('good')}
+              className={`px-2.5 py-1 rounded-full font-semibold border transition ${
+                filterCategory === 'good'
+                  ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm'
+                  : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+              }`}
+            >
+              Baik
+            </button>
+            <button
+              onClick={() => setFilterCategory('moderate')}
+              className={`px-2.5 py-1 rounded-full font-semibold border transition ${
+                filterCategory === 'moderate'
+                  ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                  : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+              }`}
+            >
+              Sedang
+            </button>
+            <button
+              onClick={() => setFilterCategory('unhealthy')}
+              className={`px-2.5 py-1 rounded-full font-semibold border transition ${
+                filterCategory === 'unhealthy'
+                  ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
+                  : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+              }`}
+            >
+              Tidak Sehat
+            </button>
           </div>
+        </div>
+
+        {/* Station List */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-2 flex flex-col gap-1.5">
+          {filteredStations.length > 0 ? (
+            filteredStations.map((st) => {
+              const aqi = st.aqi ?? Math.round((st.pm25Concentration ?? 25) * 2.2);
+              const isSelected = selectedStation?.stationId === st.stationId;
+
+              return (
+                <button
+                  key={st.stationId}
+                  onClick={() => setSelectedStation(st)}
+                  className={`w-full text-left p-3 rounded-xl border transition flex items-center justify-between ${
+                    isSelected
+                      ? 'border-emerald-500 bg-emerald-50/70 shadow-sm ring-1 ring-emerald-500/20'
+                      : 'border-slate-100 bg-white hover:bg-slate-50'
+                  }`}
+                >
+                  <div>
+                    <strong className="block text-xs font-bold text-slate-800 line-clamp-1">
+                      {st.stationName}
+                    </strong>
+                    <span className="text-[11px] text-slate-500">
+                      PM2.5: {(st.pm25Concentration ?? 0).toFixed(1)} µg/m³ • {st.sourceName || 'WAQI'}
+                    </span>
+                  </div>
+
+                  <span
+                    className="px-2 py-1 rounded-full text-white font-bold text-xs shadow-sm flex items-center gap-1"
+                    style={{
+                      backgroundColor:
+                        aqi <= 50 ? '#10b981' : aqi <= 100 ? '#f59e0b' : aqi <= 150 ? '#f97316' : '#ef4444',
+                    }}
+                  >
+                    <span>AQI</span>
+                    <span>{aqi}</span>
+                  </span>
+                </button>
+              );
+            })
+          ) : (
+            <div className="p-6 text-center text-xs text-slate-400">
+              {loading ? 'Memuat stasiun...' : 'Tidak ada stasiun yang cocok.'}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 3. Floating Station Detail Card (Google Maps Place Info Style) */}
+      {selectedStation && (
+        <div className="absolute bottom-6 left-4 right-4 md:left-[410px] md:right-auto md:w-96 z-20 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 p-4 transition-all animate-slide-down">
+          <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                Stasiun Observasi Kualitas Udara
+              </span>
+              <h3 className="text-sm font-bold text-slate-900 leading-tight">
+                {selectedStation.stationName}
+              </h3>
+              <span className="text-xs text-slate-500">
+                Kota Semarang • Data Segar (&lt; 1 jam)
+              </span>
+            </div>
+
+            <div
+              className="px-3 py-1.5 rounded-xl text-white font-extrabold text-sm flex flex-col items-center shadow-md"
+              style={{ backgroundColor: activeCategory.color }}
+            >
+              <span className="text-[9px] uppercase font-semibold tracking-wide">AQI</span>
+              <span>{activeAqi}</span>
+            </div>
+          </div>
+
+          {/* Pollutant Concentrations Grid */}
+          <div className="grid grid-cols-2 gap-2 my-3 text-xs">
+            <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
+              <span className="text-slate-400 block text-[10px] uppercase font-semibold">Konsentrasi PM2.5</span>
+              <strong className="text-sm font-bold text-slate-800">{(selectedStation.pm25Concentration ?? 0).toFixed(1)} <small className="text-[10px]">µg/m³</small></strong>
+            </div>
+            <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
+              <span className="text-slate-400 block text-[10px] uppercase font-semibold">Status Udara</span>
+              <strong className="text-sm font-bold" style={{ color: activeCategory.color }}>{activeCategory.labelId}</strong>
+            </div>
+          </div>
+
+          {/* Direct CTA: Rencanakan Rute ke Stasiun Ini */}
+          <Link
+            href="/routes"
+            className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-sm transition"
+          >
+            <NavigationIcon size={14} />
+            <span>Rencanakan Rute Bersih ke Sini</span>
+          </Link>
+        </div>
+      )}
+
+      {/* 4. Floating AQI Scale Legend (Google Maps Style Bottom Right) */}
+      <div className="hidden lg:flex absolute bottom-6 right-16 z-10 bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-slate-200/80 p-2.5 items-center gap-3 text-xs">
+        <span className="text-slate-500 font-bold text-[11px]">Skala AQI:</span>
+        <div className="flex items-center gap-1.5">
+          {AQI_CATEGORIES.map((cat) => (
+            <div key={cat.code} className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full shadow-xs" style={{ backgroundColor: cat.color }} />
+              <span className="text-[10px] text-slate-600 font-medium">{cat.labelId}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

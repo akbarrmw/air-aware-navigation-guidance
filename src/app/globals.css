@@ -1,18 +1,211 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap");
+@import "leaflet/dist/leaflet.css";
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --color-aqi-good: #10b981;
-    --color-aqi-moderate: #f59e0b;
-    --color-aqi-sensitive: #f97316;
-    --color-aqi-unhealthy: #ef4444;
-    --color-aqi-very-unhealthy: #8b5cf6;
-    --color-aqi-hazardous: #7f1d1d;
-  }
+:root {
+  --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --primary: #10b981;
+  --primary-dark: #059669;
+  --primary-light: #d1fae5;
+  --surface: #ffffff;
+  --surface-alt: #f8fafc;
+  --border: #e2e8f0;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-subtle: #94a3b8;
+  --status-good: #10b981;
+  --status-mod: #f59e0b;
+  --status-sens: #f97316;
+  --status-unhealthy: #ef4444;
+  --status-very: #8b5cf6;
+  --status-hazard: #7f1d1d;
+  --shadow-gmaps: 0 4px 20px -2px rgba(15, 23, 42, 0.15), 0 2px 6px -1px rgba(15, 23, 42, 0.08);
+}
 
-  body {
-    background-color: #0b1120;
-    color: #f8fafc;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  color: var(--text-main);
+  background-color: #f1f5f9;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Leaflet Overrides */
+.leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+  font-family: inherit !important;
+  background-color: #e2e8f0 !important;
+}
+
+.leaflet-control-attribution {
+  font-size: 10px !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(4px);
+  border-radius: 4px;
+  padding: 2px 6px !important;
+  margin: 6px !important;
+}
+
+.custom-div-icon,
+.station-div-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Custom Scrollbar for sidebars */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Topbar Header */
+.topbar {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  right: 16px;
+  height: 56px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.logo-mark {
+  width: 32px;
+  height: 32px;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-name {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: #0f172a;
+}
+
+.brand-mode {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.app-navigation {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.nav-link:hover {
+  color: #0f172a;
+  background-color: #f1f5f9;
+}
+
+.nav-link.active {
+  color: #047857;
+  background-color: #ecfdf5;
+}
+
+/* Live Badge */
+.live-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+  animation: livePulse 2s infinite ease-in-out;
+}
+
+@keyframes livePulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
   }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.35);
+  }
+}
+
+/* Animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-down {
+  animation: slideDown 0.2s ease-out forwards;
 }

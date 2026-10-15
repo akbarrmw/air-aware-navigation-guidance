@@ -1,9 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import './globals.css';
+import {
+  LeafLogo,
+  RouteIcon,
+  LayersIcon,
+  HistoryIcon,
+} from '@/components/common/Icons';
 
 export const metadata: Metadata = {
-  title: 'EcoPulse — Pilih Rute, Kenali Paparan',
+  title: 'EcoPulse — Air Quality Route Intelligence',
   description:
     'Platform navigasi cerdas yang membantu masyarakat perkotaan memperkirakan paparan polusi PM2.5 dan memilih rute perjalanan yang lebih sehat.',
 };
@@ -15,62 +21,62 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <body className="min-h-screen flex flex-col bg-slate-950 text-slate-100 antialiased">
-        <header className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur border-b border-slate-800">
-          <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center font-black text-slate-950 text-lg">
-                🌱
-              </span>
-              <span className="font-bold text-xl tracking-tight text-white">
-                Eco<span className="text-emerald-400">Pulse</span>
-              </span>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body>
+        <div className="relative w-full h-screen overflow-hidden bg-slate-100 flex flex-col">
+          {/* Google Maps Style Floating Topbar Header */}
+          <header className="topbar">
+            <Link href="/" className="brand">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+                <LeafLogo />
+              </div>
+              <div className="brand-copy">
+                <span className="brand-name">EcoPulse</span>
+                <span className="brand-mode">Air-Aware Navigation</span>
+              </div>
             </Link>
 
-            <nav className="flex items-center gap-6 text-sm font-medium">
-              <Link href="/routes" className="text-slate-300 hover:text-emerald-400 transition">
-                Rencana Rute
+            <nav className="hidden md:flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200" aria-label="Navigasi Utama">
+              <Link href="/routes" className="nav-link">
+                <RouteIcon size={16} />
+                <span>Navigasi Rute</span>
               </Link>
-              <Link href="/map" className="text-slate-300 hover:text-emerald-400 transition">
-                Peta Udara
+              <Link href="/map" className="nav-link">
+                <LayersIcon size={16} />
+                <span>Peta Polusi</span>
               </Link>
-              <Link href="/methodology" className="text-slate-300 hover:text-emerald-400 transition">
-                Metodologi
-              </Link>
-              <Link
-                href="/history"
-                className="text-slate-300 hover:text-emerald-400 transition hidden sm:inline"
-              >
-                Riwayat
+              <Link href="/history" className="nav-link">
+                <HistoryIcon size={16} />
+                <span>Riwayat</span>
               </Link>
             </nav>
 
             <div className="flex items-center gap-3">
+              <div className="live-badge hidden sm:flex">
+                <span className="live-dot" />
+                <span className="font-semibold text-slate-700">Semarang (Pilot)</span>
+              </div>
+
               <Link
                 href="/login"
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-semibold transition"
+                className="w-8 h-8 rounded-full bg-slate-800 text-white font-bold text-xs flex items-center justify-center hover:bg-slate-700 transition shadow-sm"
+                aria-label="Profil Pengguna"
               >
-                Masuk / Akun
+                EP
               </Link>
             </div>
-          </div>
-        </header>
+          </header>
 
-        <main className="flex-1">{children}</main>
-
-        <footer className="bg-slate-900/80 border-t border-slate-800 py-6 text-xs text-slate-400 text-center">
-          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p>© 2026 EcoPulse. Dibuat untuk demonstrasi Hackathon. Estimasi indikator paparan lingkungan.</p>
-            <div className="flex gap-4">
-              <Link href="/methodology" className="hover:text-emerald-400">
-                Atribusi Sumber & Batasan
-              </Link>
-              <Link href="/settings" className="hover:text-emerald-400">
-                Privasi & Pengaturan
-              </Link>
-            </div>
-          </div>
-        </footer>
+          {/* Main Map Viewport */}
+          <main className="w-full h-full relative z-0">{children}</main>
+        </div>
       </body>
     </html>
   );
