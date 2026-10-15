@@ -67,13 +67,17 @@ export function processRouteCandidates(rawRoutes: RawRouteInput[]): RouteCandida
   // 1. Urutkan berdasarkan durasi tersingkat
   const sorted = [...rawRoutes].sort((a, b) => a.durationSeconds - b.durationSeconds);
 
-  // 2. Buang rute yang terlalu mirip / tumpang tindih tinggi (> 90%)
+  // 2. Buang hanya rute yang benar-benar duplikat / tumpang tindih tinggi
+  // Memastikan rute alternatif B dan C yang memiliki perbedaan jalur atau durasi tetap tampil
   const uniqueRoutes: RawRouteInput[] = [];
 
   for (const route of sorted) {
     const isDuplicate = uniqueRoutes.some((existing) => {
       const overlap = calculateRouteOverlapRatio(route.coordinates, existing.coordinates);
-      return overlap >= ECOPULSE_PARAMS.PAR_10_ROUTE_OVERLAP_THRESHOLD;
+      const durationDiffSeconds = Math.abs(route.durationSeconds - existing.durationSeconds);
+
+      // Duplikat jika koordinat identik (>= 98%) atau overlap >= 90% dengan selisih waktu nyaris sama (< 30 detik)
+      return overlap >= 0.98 || (overlap >= ECOPULSE_PARAMS.PAR_10_ROUTE_OVERLAP_THRESHOLD && durationDiffSeconds < 30);
     });
 
     if (!isDuplicate) {
