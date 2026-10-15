@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { createSuccessResponse, createErrorResponse } from '@/lib/utils/errorHandler';
 import { runAnalysisPipeline } from '@/lib/services/pipelineService';
+import { RoutingServiceError } from '@/lib/services/routingService';
 
 const analyzeSchema = z.object({
   origin: z.object({
@@ -45,12 +46,17 @@ export async function POST(request: NextRequest) {
 
     const elapsed = Date.now() - startTime;
     return createSuccessResponse(result, elapsed);
-  } catch (err) {
+  } catch (err: unknown) {
+    if (err instanceof RoutingServiceError) {
+      return createErrorResponse(err.code, err.message, err.statusCode);
+    }
+
+    console.error('[API Analyze] Error:', err);
     return createErrorResponse(
       'ANALYZE_ERROR',
       'Terjadi kendala saat menganalisis alternatif rute dan polusi udara',
       500,
-      err
+      err instanceof Error ? err.message : String(err)
     );
   }
 }
