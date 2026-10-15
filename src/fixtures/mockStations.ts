@@ -1,4 +1,12 @@
-import { StationData } from '@/types/air-quality';
+/**
+ * @file mockStations.ts
+ * @description Data fixture stasiun kualitas udara simulasi (Semarang Pilot City).
+ * @author Person 2 (Backend & External APIs) / Fixture by Person 1
+ * @module fixtures/mockStations
+ * @see CODE_SPEC_AANG.md Bagian 3.3b & Bagian 6
+ */
+
+import type { StationData } from '@/types/air-quality';
 
 /**
  * Fixture stasiun kualitas udara simulasi (Semarang Pilot City)
@@ -12,6 +20,7 @@ export const MOCK_STATIONS: StationData[] = [
     aqi: 78,
     dominantPollutant: 'pm25',
     pm25Concentration: 24.8,
+    pm25Origin: 'measured',
     pm10Concentration: 45.0,
     observedAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
     ageMinutes: 30,
@@ -27,6 +36,7 @@ export const MOCK_STATIONS: StationData[] = [
     aqi: 115,
     dominantPollutant: 'pm25',
     pm25Concentration: 41.2,
+    pm25Origin: 'measured',
     pm10Concentration: 62.0,
     observedAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
     ageMinutes: 45,
@@ -42,6 +52,7 @@ export const MOCK_STATIONS: StationData[] = [
     aqi: 45,
     dominantPollutant: 'pm25',
     pm25Concentration: 10.8,
+    pm25Origin: 'measured',
     pm10Concentration: 22.0,
     observedAt: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
     ageMinutes: 20,
@@ -57,6 +68,7 @@ export const MOCK_STATIONS: StationData[] = [
     aqi: 152,
     dominantPollutant: 'pm25',
     pm25Concentration: 57.0,
+    pm25Origin: 'measured',
     pm10Concentration: 85.0,
     observedAt: new Date(Date.now() - 50 * 60 * 1000).toISOString(),
     ageMinutes: 50,

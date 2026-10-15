@@ -81,8 +81,8 @@ export default function MapPage() {
             </h4>
             <div className="space-y-1 text-xs text-slate-300">
               <p><strong className="text-white">Sumber:</strong> {selectedStation.sourceName}</p>
-              <p><strong className="text-white">Waktu Observasi:</strong> {new Date(selectedStation.observedAt).toLocaleTimeString()}</p>
-              <p><strong className="text-white">Usia Data:</strong> {selectedStation.ageMinutes} menit yang lalu</p>
+              <p><strong className="text-white">Waktu Observasi:</strong> {selectedStation.observedAt ? new Date(selectedStation.observedAt).toLocaleTimeString() : '-'}</p>
+              <p><strong className="text-white">Usia Data:</strong> {selectedStation.ageMinutes ?? '-'} menit yang lalu</p>
               <p><strong className="text-white">Koordinat:</strong> {selectedStation.lat}, {selectedStation.lng}</p>
             </div>
           </div>

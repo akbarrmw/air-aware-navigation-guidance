@@ -128,7 +128,7 @@ export default function RoutesPlanningPage() {
                   </span>
                 </div>
                 <p className="text-emerald-200 text-base font-semibold mb-4">
-                  {result.recommendationExplanation}
+                  {result.explanation.text}
                 </p>
 
                 {/* Action Rules */}
@@ -175,9 +175,9 @@ export default function RoutesPlanningPage() {
                           <td className="p-3 font-bold text-emerald-400">Rute {r.label}</td>
                           <td className="p-3">
                             {Math.round(r.durationSeconds / 60)} mnt
-                            {r.timeDiffVsFastestMin > 0 && (
+                            {r.comparison.extraSeconds > 0 && (
                               <span className="text-xs text-slate-400 ml-1">
-                                (+{r.timeDiffVsFastestMin} mnt)
+                                (+{Math.round(r.comparison.extraSeconds / 60)} mnt)
                               </span>
                             )}
                           </td>
@@ -207,7 +207,7 @@ export default function RoutesPlanningPage() {
             </>
           ) : (
             <div className="p-12 bg-slate-900/40 border border-slate-800 rounded-2xl text-center text-slate-500">
-              Silakan tekan tombol <strong>"Analisis Rute & Polusi"</strong> untuk melihat perbandingan trade-off alternatif rute.
+              Silakan tekan tombol <strong>&quot;Analisis Rute &amp; Polusi&quot;</strong> untuk melihat perbandingan trade-off alternatif rute.
             </div>
           )}
         </div>

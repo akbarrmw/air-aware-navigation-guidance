@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { createSuccessResponse, createErrorResponse } from '@/lib/utils/errorHandler';
+import { sendSuccess, sendError } from '@/lib/server/apiResponse';
 import { getAirQualityStations } from '@/lib/services/airQualityService';
 
 export async function GET(request: NextRequest) {
@@ -18,27 +18,21 @@ export async function GET(request: NextRequest) {
       const e = parseFloat(east);
 
       if (isNaN(s) || isNaN(w) || isNaN(n) || isNaN(e)) {
-        return createErrorResponse(
-          'INVALID_BOUNDS',
-          'Parameter koordinat bounding box (south, west, north, east) harus berupa angka',
-          400
+        return sendError(
+          'VALIDATION_ERROR',
+          'Parameter koordinat bounding box (south, west, north, east) harus berupa angka'
         );
       }
       bounds = { south: s, west: w, north: n, east: e };
     }
 
     const stations = await getAirQualityStations(bounds);
-    return createSuccessResponse(stations);
+    return sendSuccess(stations);
   } catch (err: unknown) {
     if (err && typeof err === 'object' && 'digest' in err && String((err as { digest: unknown }).digest).startsWith('NEXT_')) {
       throw err;
     }
     console.error('[API Stations] Error:', err);
-    return createErrorResponse(
-      'AIR_QUALITY_ERROR',
-      'Gagal memuat stasiun kualitas udara dari penyedia',
-      502,
-      err instanceof Error ? err.message : String(err)
-    );
+    return sendError('UPSTREAM_ERROR', 'Gagal memuat stasiun kualitas udara dari penyedia');
   }
 }

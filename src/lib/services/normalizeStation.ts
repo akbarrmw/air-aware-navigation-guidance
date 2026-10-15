@@ -67,9 +67,15 @@ export function normalizeStation(raw: RawStationInput): StationData {
   const { ageMinutes, freshness, utcIso } = calculateFreshness(raw.observedAt);
 
   let pm25 = raw.pm25Concentration ?? null;
-  // Jika pm25Concentration belum ada tetapi ada aqi, lakukan estimasi konversi aqiToPm25Concentration
-  if (pm25 === null && typeof raw.aqi === 'number') {
+  let pm25Origin: 'measured' | 'derivedFromAqi' | null = null;
+
+  if (pm25 !== null) {
+    pm25Origin = 'measured';
+  } else if (typeof raw.aqi === 'number') {
     pm25 = aqiToPm25Concentration(raw.aqi);
+    if (pm25 !== null) {
+      pm25Origin = 'derivedFromAqi';
+    }
   }
 
   return {
@@ -80,6 +86,7 @@ export function normalizeStation(raw: RawStationInput): StationData {
     aqi: typeof raw.aqi === 'number' ? raw.aqi : null,
     dominantPollutant: raw.dominantPollutant ?? (pm25 !== null ? 'pm25' : null),
     pm25Concentration: pm25,
+    pm25Origin,
     pm10Concentration: raw.pm10Concentration ?? null,
     observedAt: utcIso,
     ageMinutes,

@@ -1,18 +1,32 @@
-import { RouteCandidate } from '@/types/routing';
-import { StationData } from '@/types/air-quality';
-import { OptimizationPreference, AnalyzeRoutesResponseData } from '@/types/algorithms';
-import { calculateRouteExposure } from '@/lib/algorithms/exposure';
-import { scoreAndRankRoutes } from '@/lib/algorithms/scoring';
-import { generateRecommendations } from '@/lib/algorithms/recommendation';
+/**
+ * @file pipelineService.ts
+ * @description Integrator pipeline analisis rute dan polusi udara.
+ * Menggabungkan kandidat rute, data stasiun, dan algoritma evaluasi untuk menghasilkan AnalyzeRoutesResponseData.
+ * 
+ * @author Person 2 (Backend & External APIs)
+ * @module lib/services/pipelineService
+ * @see CODE_SPEC_AANG.md Bagian 7.1 & Bagian 11 (Gate G1 & G2)
+ */
+
+import { MOCK_ROUTES } from '@/fixtures/mockRoutes';
+import { MOCK_STATIONS } from '@/fixtures/mockStations';
+import { MOCK_DATA_SOURCES, MOCK_DISCLAIMER, MOCK_ALGORITHM_VERSION } from '@/fixtures/mockAnalysis';
+import type { RouteCandidate } from '@/types/routing';
+import type { StationData } from '@/types/air-quality';
+import type { RoutePreferences } from '@/types/preferences';
+import type { AnalyzeRoutesResponseData } from '@/types/analyze';
+import type { ApiWarning } from '@/types/api';
+import { computeRouteExposure } from '@/lib/algorithms/exposure';
+import { decideRoutes } from '@/lib/algorithms/scoring';
 import { getRouteAlternatives } from './routingService';
 import { getAirQualityStations, AirQualityBounds } from './airQualityService';
 import { isPointWithinPilotArea } from './geocodingService';
-import { ECOPULSE_PARAMS } from '@/config/parameters';
+import { DEFAULT_ALGORITHM_PARAMS } from '@/config/parameters';
 
 export interface AnalyzePipelineInput {
   origin: { lat: number; lng: number };
   destination: { lat: number; lng: number };
-  preferences: OptimizationPreference;
+  preferences: RoutePreferences;
   routes?: RouteCandidate[];
   stations?: StationData[];
 }
@@ -35,8 +49,8 @@ function calculateRoutesBBox(routes: RouteCandidate[]): AirQualityBounds {
     }
   }
 
-  // Margin ~10 km sekitar rute (0.09 derajat)
-  const margin = (ECOPULSE_PARAMS.PAR_02_SEARCH_RADIUS_KM / 111.0);
+  // Margin radius pencarian stasiun (10 km = ~0.09 derajat)
+  const margin = (DEFAULT_ALGORITHM_PARAMS.stationRadiusMeters / 111000);
 
   return {
     south: Number((minLat - margin).toFixed(4)),
@@ -47,69 +61,69 @@ function calculateRoutesBBox(routes: RouteCandidate[]): AirQualityBounds {
 }
 
 /**
- * Pipeline Integrator: Menggabungkan Rute + Stasiun + Algoritma Evaluasi
+ * Pipeline Integrator: Menggabungkan Rute + Stasiun + Algoritma Evaluasi.
  * Pemilik: Person 2 (Backend Services)
  */
 export async function runAnalysisPipeline(
   input: AnalyzePipelineInput
 ): Promise<AnalyzeRoutesResponseData> {
   const isSimulation = process.env.DATA_MODE === 'simulation';
-  const warnings: string[] = [];
+  const warnings: ApiWarning[] = [];
 
   // 1. Cek cakupan area pilot
   const originInArea = isPointWithinPilotArea(input.origin.lat, input.origin.lng);
   const destInArea = isPointWithinPilotArea(input.destination.lat, input.destination.lng);
 
   if (!originInArea || !destInArea) {
-    warnings.push('OUTSIDE_COVERAGE: Rute melintasi luar batas kota pilot. Estimasi polusi mungkin terbatas atau tidak tersedia.');
+    warnings.push({
+      code: 'OUTSIDE_COVERAGE',
+      message: 'Rute melintasi luar batas kota pilot. Estimasi polusi mungkin terbatas atau tidak tersedia.',
+    });
   }
 
   // 2. Dapatkan alternatif rute (Live OSRM atau mock)
-  const candidateRoutes = input.routes || (await getRouteAlternatives(input.origin, input.destination));
+  const candidateRoutes =
+    input.routes ||
+    (isSimulation
+      ? MOCK_ROUTES
+      : await getRouteAlternatives(input.origin, input.destination));
 
   // 3. Dapatkan data stasiun udara di sekitar koridor rute
   let stations = input.stations;
   if (!stations) {
-    const routeBbox = calculateRoutesBBox(candidateRoutes);
-    stations = await getAirQualityStations(routeBbox);
+    if (isSimulation) {
+      stations = MOCK_STATIONS;
+    } else {
+      const routeBbox = calculateRoutesBBox(candidateRoutes);
+      stations = await getAirQualityStations(routeBbox);
+    }
   }
 
   // 4. Hitung estimasi paparan tiap rute menggunakan ALG-01 (Person 1)
-  const routesWithEstimates = candidateRoutes.map((route) => {
-    const estimate = calculateRouteExposure(route, stations!);
-    return {
-      candidate: route,
-      estimate,
-    };
-  });
+  const routesWithEstimates = candidateRoutes.map((route) => ({
+    ...route,
+    estimate: computeRouteExposure({ route, stations: stations! }),
+  }));
 
   // 5. Lakukan skoring multi-kriteria dan Pareto ranking menggunakan ALG-03 (Person 1)
-  const rankingResult = scoreAndRankRoutes(routesWithEstimates, input.preferences);
+  const decision = decideRoutes({
+    routes: routesWithEstimates,
+    preferences: input.preferences,
+  });
 
-  // 6. Cari rute rekomendasi dan rute tercepat untuk membuat action recommendations ALG-04
-  const recommendedItem = rankingResult.routes.find(
-    (r) => r.label === rankingResult.recommendedRouteLabel
-  ) || rankingResult.routes[0];
-
-  const fastestItem = rankingResult.routes.find((r) => r.isFastest) || rankingResult.routes[0];
-
-  const actionMessages = generateRecommendations(
-    recommendedItem.estimate,
-    fastestItem.estimate,
-    recommendedItem.durationSeconds / 60
-  );
-
-  // 7. Tambahkan peringatan simulasi jika aktif
+  // 6. Tambahkan peringatan simulasi jika aktif
   if (isSimulation) {
-    warnings.unshift('SIMULATION_DATA: Mode simulasi aktif. Menampilkan data contoh rute & polusi offline.');
+    warnings.unshift({
+      code: 'SIMULATION_DATA',
+      message: 'Mode simulasi aktif. Menampilkan data contoh rute & polusi offline.',
+    });
   }
 
   return {
-    routes: rankingResult.routes,
-    recommendedRouteLabel: rankingResult.recommendedRouteLabel,
-    recommendationExplanation: rankingResult.recommendationExplanation,
-    actionMessages,
+    ...decision,
+    dataSources: MOCK_DATA_SOURCES,
     warnings,
-    disclaimer: 'Estimasi indikator paparan lingkungan berdasarkan durasi dan konsentrasi interpolasi; bukan dosis inhalasi klinis perorangan.',
+    disclaimer: MOCK_DISCLAIMER,
+    algorithmVersion: MOCK_ALGORITHM_VERSION,
   };
 }

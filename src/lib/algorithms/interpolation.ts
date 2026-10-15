@@ -26,12 +26,13 @@ export function calculateDistanceMeters(
 export interface IdwResult {
   estimatedValue: number | null;
   nearestStationDistanceM: number | null;
+  nearestDistanceMeters: number | null;
   usedStations: {
     stationId: string;
     stationName: string;
     distanceMeters: number;
     value: number;
-    ageMinutes: number;
+    ageMinutes: number | null;
   }[];
 }
 
@@ -55,7 +56,12 @@ export function interpolateIdw(
     .slice(0, ECOPULSE_PARAMS.PAR_03_MAX_NEAREST_STATIONS);
 
   if (validStations.length === 0) {
-    return { estimatedValue: null, nearestStationDistanceM: null, usedStations: [] };
+    return {
+      estimatedValue: null,
+      nearestStationDistanceM: null,
+      nearestDistanceMeters: null,
+      usedStations: [],
+    };
   }
 
   // Jika stasiun terdekat berada dalam batas anti-singularitas (epsilon 100m)
@@ -64,6 +70,7 @@ export function interpolateIdw(
     return {
       estimatedValue: closest.pm25Concentration,
       nearestStationDistanceM: closest.distance,
+      nearestDistanceMeters: closest.distance,
       usedStations: validStations.map((s) => ({
         stationId: s.stationId,
         stationName: s.stationName,
@@ -90,6 +97,7 @@ export function interpolateIdw(
   return {
     estimatedValue,
     nearestStationDistanceM: Math.round(closest.distance),
+    nearestDistanceMeters: Math.round(closest.distance),
     usedStations: validStations.map((s) => ({
       stationId: s.stationId,
       stationName: s.stationName,

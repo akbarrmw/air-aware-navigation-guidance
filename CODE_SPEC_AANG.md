@@ -482,7 +482,7 @@ Parameter bisnis: `src/config/parameters.ts` (P1, PAR-01..14, satu sumber) dan `
 | `package.json`, `package-lock.json`, `tsconfig.json`, `next.config.ts`, `eslint.config.mjs`, `.prettierrc`, `.gitattributes`, `.gitignore`, `vitest.config.ts` | Scaffold; semua dependensi diketahui dipasang sekali (Next, React, `react-leaflet`/`leaflet`, `@supabase/supabase-js`, `@supabase/ssr`, `zod`, `@mapbox/polyline`, `vitest`, tipe terkait). Perubahan dependensi lewat Issue `request:p1` | NFR-09 |
 | `.env.example` | Lengkap sesuai Bagian 5 | NFR-09 |
 | `.github/CODEOWNERS`, `.github/pull_request_template.md` | Pemetaan pemilik (notifikasi) dan checklist PR "hanya menyentuh path milik sendiri" | — |
-| `scripts/checkOwnership.mjs` | CI: cabang `pN/*` hanya boleh mengubah path milik PN (kecuali PR scaffold) | — |
+| `scripts/checkOwnership.mjs` | CI: memastikan PR hanya mengubah path sesuai kepemilikan modul/peran terkait (kecuali PR scaffold) | — |
 | `scripts/evalLeaveOneOut.ts` | Evaluasi galat interpolasi memakai fixture stasiun P2 | M-05, TC-28 |
 | `README.md` | Cara menjalankan, env, atribusi data, batasan; dirakit dari `docs/p*-*.md` | FR-15 |
 | `src/types/api.ts`, `common.ts`, `aqiScale.ts`, `air-quality.ts`, `geocoding.ts`, `routing.ts`, `preferences.ts`, `algorithms.ts`, `analyze.ts`, `trips.ts`, `schemas.ts` | Kontrak Bagian 3; beku setelah G0 | semua |
@@ -766,10 +766,17 @@ Props dan tanda tangan fungsi pada stub adalah **bagian dari kontrak**; perubaha
 ## 12. Alur Kerja Git dan Gate Integrasi
 
 ### 12.1 Cabang dan PR
-- `main` dilindungi. Cabang kerja: `p1/<topik>`, `p2/<topik>`, `p3/<topik>`, `p4/<topik>`.
+- `main` dilindungi. Format penamaan cabang kerja menggunakan standar **Conventional Branches** (selaras dengan `SKILL.md` dan `README.md`):
+  - `feat/<fitur>`: Penambahan fitur baru, algoritma, endpoint, atau komponen UI (contoh: `feat/algorithms-exposure`, `feat/map-aqi-layer`, `feat/scaffold`).
+  - `fix/<isu>`: Perbaikan bug atau penanganan edge-case (contoh: `fix/idw-zero-distance-singularity`, `fix/login-state`).
+  - `refactor/<modul>`: Restrukturisasi kode tanpa mengubah perilaku/kontrak (contoh: `refactor/segmentation-algorithm`).
+  - `test/<tc-id>`: Penambahan atau perbaikan unit/integration test (contoh: `test/tc-01-exposure`).
+  - `docs/<topik>`: Pembaruan atau penambahan dokumentasi (contoh: `docs/api-contracts`).
+  - `chore/<tugas>`: Pemeliharaan dependensi, konfigurasi, atau tooling (contoh: `chore/supabase-config`).
+- Aturan penamaan: huruf kecil (`kebab-case`), deskriptif, dan satu cabang hanya untuk satu fokus fitur/tugas.
 - Sebelum G0: hanya P1 yang melakukan commit ke repositori; anggota lain mengerjakan **spike, keputusan, dan akun layanan** (bukan kode di repositori).
 - Setelah G0: PR **kecil dan sering** ke `main` (satu fitur per PR). Rebase ke `main` sebelum PR; `--force-with-lease` hanya pada cabang sendiri.
-- CI: `lint`, `typecheck`, `test`, dan `scripts/checkOwnership.mjs` (menolak PR yang menyentuh path pemilik lain).
+- CI: `lint`, `typecheck`, `test`, dan `scripts/checkOwnership.mjs` (menolak PR yang menyentuh path pemilik lain di luar cakupan).
 - Review silang bergilir: P1↔P2, P3↔P4 (memeriksa kepatuhan kontrak). CODEOWNERS hanya untuk notifikasi.
 
 ### 12.2 Gate (berbasis dependensi)
