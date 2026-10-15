@@ -50,6 +50,24 @@ export function haversineMeters(a: LatLngTuple, b: LatLngTuple): number {
 }
 
 /**
+ * Menghitung jarak Haversine dalam satuan meter dengan 4 parameter angka (lat1, lon1, lat2, lon2).
+ * 
+ * @param lat1 Latitude titik 1
+ * @param lon1 Longitude titik 1
+ * @param lat2 Latitude titik 2
+ * @param lon2 Longitude titik 2
+ * @returns Jarak dalam meter
+ */
+export function haversineDistanceMeters(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  return haversineMeters([lat1, lon1], [lat2, lon2]);
+}
+
+/**
  * Menghitung total jarak kumulatif dari suatu polyline lintasan koordinat.
  * 
  * @param path Array koordinat [lat, lng]

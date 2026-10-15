@@ -14,7 +14,7 @@ import { AQI_CATEGORIES } from '@/types/aqiScale';
 /**
  * Versi breakpoint AQI yang digunakan sebagai rujukan standar (Keputusan K-G3).
  */
-export const AQI_BREAKPOINT_VERSION = 'US-EPA-2024';
+export const AQI_BREAKPOINT_VERSION = 'US-EPA-PM25-2024';
 
 /**
  * Definisi rentang breakpoint US-EPA untuk PM2.5 (µg/m³) vs AQI Index.
