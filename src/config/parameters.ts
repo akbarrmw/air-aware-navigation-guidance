@@ -74,6 +74,7 @@ export const AANG_PARAMS = {
 } as const;
 
 /**
- * Alias kompatibilitas mundur.
+ * Alias kompatibilitas mundur dan alternatif penamaan.
  */
 export const ECOPULSE_PARAMS = AANG_PARAMS;
+export const ALGORITHM_PARAMS = AANG_PARAMS;
