@@ -1,0 +1,90 @@
+import { StationData, FreshnessStatus } from '@/types/air-quality';
+import { aqiToPm25Concentration } from '@/lib/algorithms/aqiConversion';
+
+export interface RawStationInput {
+  stationId: string;
+  stationName?: string | null;
+  lat: number;
+  lng: number;
+  aqi?: number | null;
+  dominantPollutant?: string | null;
+  pm25Concentration?: number | null;
+  pm10Concentration?: number | null;
+  observedAt?: string | null;
+  dataType?: 'station_observation' | 'model_fallback' | 'simulation';
+  sourceName?: string | null;
+}
+
+/**
+ * Menghitung usia data dalam menit dan menentukan status kesegaran (freshness)
+ * Aturan: fresh <= 3 jam (180 mnt), stale <= 24 jam (1440 mnt), expired > 24 jam atau tanpa waktu
+ */
+export function calculateFreshness(observedAtIso: string | null | undefined): {
+  ageMinutes: number;
+  freshness: FreshnessStatus;
+  utcIso: string;
+} {
+  if (!observedAtIso) {
+    return {
+      ageMinutes: 99999,
+      freshness: 'expired',
+      utcIso: new Date(0).toISOString(),
+    };
+  }
+
+  const date = new Date(observedAtIso);
+  if (isNaN(date.getTime())) {
+    return {
+      ageMinutes: 99999,
+      freshness: 'expired',
+      utcIso: new Date(0).toISOString(),
+    };
+  }
+
+  const now = Date.now();
+  const diffMs = Math.max(0, now - date.getTime());
+  const ageMinutes = Math.floor(diffMs / (1000 * 60));
+
+  let freshness: FreshnessStatus = 'expired';
+  if (ageMinutes <= 180) {
+    freshness = 'fresh';
+  } else if (ageMinutes <= 1440) {
+    freshness = 'stale';
+  }
+
+  return {
+    ageMinutes,
+    freshness,
+    utcIso: date.toISOString(),
+  };
+}
+
+/**
+ * Menormalisasi raw station data menjadi format standar StationData
+ * Pemilik: Person 2 (Backend Services)
+ */
+export function normalizeStation(raw: RawStationInput): StationData {
+  const { ageMinutes, freshness, utcIso } = calculateFreshness(raw.observedAt);
+
+  let pm25 = raw.pm25Concentration ?? null;
+  // Jika pm25Concentration belum ada tetapi ada aqi, lakukan estimasi konversi aqiToPm25Concentration
+  if (pm25 === null && typeof raw.aqi === 'number') {
+    pm25 = aqiToPm25Concentration(raw.aqi);
+  }
+
+  return {
+    stationId: String(raw.stationId),
+    stationName: raw.stationName || 'Stasiun Pemantau Kualitas Udara',
+    lat: Number(raw.lat),
+    lng: Number(raw.lng),
+    aqi: typeof raw.aqi === 'number' ? raw.aqi : null,
+    dominantPollutant: raw.dominantPollutant ?? (pm25 !== null ? 'pm25' : null),
+    pm25Concentration: pm25,
+    pm10Concentration: raw.pm10Concentration ?? null,
+    observedAt: utcIso,
+    ageMinutes,
+    freshness,
+    dataType: raw.dataType || 'station_observation',
+    sourceName: raw.sourceName || 'WAQI',
+  };
+}
