@@ -37,3 +37,4 @@ export async function createServerSupabaseClient() {
 
 // Alias fungsi untuk konsistensi panggilan
 export const createServerClientInstance = createServerSupabaseClient;
+export const createClient = createServerSupabaseClient;

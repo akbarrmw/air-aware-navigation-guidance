@@ -13,29 +13,29 @@ import type { ConfidenceLevel } from './algorithms';
 /**
  * Representasi baris pada tabel `public.profiles`.
  */
-export interface ProfileRow {
+export type ProfileRow = {
   user_id: string;
   exposure_weight: number;
   max_extra_time_percent: number | null;
   history_consent: boolean;
   consent_updated_at: string | null;
   created_at: string;
-}
+};
 
 /**
  * Representasi payload update pada tabel `public.profiles`.
  */
-export interface ProfileUpdatePayload {
+export type ProfileUpdatePayload = {
   exposure_weight?: number;
   max_extra_time_percent?: number | null;
   history_consent?: boolean;
-  consent_updated_at?: string;
-}
+  consent_updated_at?: string | null;
+};
 
 /**
  * Representasi baris pada tabel `public.trips`.
  */
-export interface TripRow {
+export type TripRow = {
   trip_id: string;
   user_id: string;
   origin_label: string;
@@ -61,7 +61,7 @@ export interface TripRow {
   estimate_details: Record<string, unknown> | null;
   algorithm_version: string;
   created_at: string;
-}
+};
 
 /**
  * Representasi baris masukan baru (insert) pada tabel `public.trips`.
@@ -71,6 +71,14 @@ export type TripInsertRow = Omit<TripRow, 'trip_id' | 'created_at'> & {
   created_at?: string;
 };
 
+export interface GenericRelationship {
+  foreignKeyName: string;
+  columns: string[];
+  isOneToOne?: boolean;
+  referencedRelation: string;
+  referencedColumns: string[];
+}
+
 /**
  * Definisi skema Database Supabase untuk generic type-safety klien Supabase.
  */
@@ -79,17 +87,21 @@ export interface Database {
     Tables: {
       profiles: {
         Row: ProfileRow;
-        Insert: Omit<ProfileRow, 'created_at'> & { created_at?: string };
-        Update: Partial<ProfileUpdatePayload>;
+        Insert: Partial<ProfileRow>;
+        Update: Partial<ProfileRow>;
+        Relationships: GenericRelationship[];
       };
       trips: {
         Row: TripRow;
         Insert: TripInsertRow;
         Update: Partial<TripRow>;
+        Relationships: GenericRelationship[];
       };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }
 
