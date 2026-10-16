@@ -1,87 +1,104 @@
+/**
+ * @file page.tsx
+ * @description Halaman Autentikasi Pengguna P-04 (Mode Masuk & Mode Daftar) untuk AANG.
+ * @author Person 3 (Database, Auth, & History Services)
+ * @see CODE_SPEC_AANG.md Bagian 8.1 & FR-10
+ */
+
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
+import { LoginForm } from '@/components/auth/LoginForm';
+import { RegisterForm } from '@/components/auth/RegisterForm';
+import { Leaf } from 'lucide-react';
 
-export default function LoginPage() {
-  const [isRegister, setIsRegister] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [message, setMessage] = useState<string | null>(null);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setMessage('Simulasi: Berhasil masuk ke akun demo.');
-  };
+function AuthContent() {
+  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white p-4">
-      <div className="max-w-md w-full bg-slate-800 rounded-xl p-8 border border-slate-700 shadow-xl">
-        <h1 className="text-2xl font-bold mb-2 text-emerald-400">
-          {isRegister ? 'Daftar Akun AANG' : 'Masuk ke AANG'}
+    <div className="w-full max-w-md mx-auto">
+      {/* Brand Header */}
+      <div className="text-center mb-8">
+        <Link href="/" className="inline-flex items-center gap-2 mb-4 group">
+          <span className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center font-black text-slate-950 shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition">
+            <Leaf className="w-5 h-5 text-slate-950 fill-current" />
+          </span>
+          <span className="font-extrabold text-2xl tracking-tight text-white">
+            AANG
+          </span>
+        </Link>
+        <h1 className="text-2xl font-black text-white tracking-tight">
+          {activeTab === 'login' ? 'Selamat Datang Kembali' : 'Mulai Bersama AANG'}
         </h1>
-        <p className="text-slate-400 text-sm mb-6">
-          Simpan riwayat perjalanan dan amati pola akumulasi paparan udara Anda.
+        <p className="text-slate-400 text-xs mt-1.5 leading-relaxed">
+          {activeTab === 'login'
+            ? 'Masuk untuk mengakses riwayat rute dan analisis paparan personal Anda.'
+            : 'Daftar akun gratis untuk menyimpan perjalanan dan preferensi rute sehat.'}
         </p>
-
-        {message && (
-          <div className="mb-4 p-3 bg-emerald-950 border border-emerald-600 rounded text-emerald-300 text-sm">
-            {message}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs uppercase tracking-wider text-slate-400 mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
-              placeholder="nama@email.com"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs uppercase tracking-wider text-slate-400 mb-1">
-              Kata Sandi (min. 8 karakter)
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 rounded font-semibold transition"
-          >
-            {isRegister ? 'Buat Akun' : 'Masuk'}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center text-sm text-slate-400">
-          {isRegister ? 'Sudah punya akun? ' : 'Belum punya akun? '}
-          <button
-            onClick={() => setIsRegister(!isRegister)}
-            className="text-emerald-400 hover:underline font-medium"
-          >
-            {isRegister ? 'Masuk sekarang' : 'Daftar sekarang'}
-          </button>
-        </div>
-
-        <div className="mt-4 text-center">
-          <Link href="/" className="text-xs text-slate-500 hover:text-slate-400">
-            ← Kembali ke Beranda
-          </Link>
-        </div>
       </div>
+
+      {/* Auth Card Container */}
+      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+        {/* Tab Toggle Switch */}
+        <div className="grid grid-cols-2 p-1 bg-slate-950/80 border border-slate-800 rounded-xl mb-6">
+          <button
+            type="button"
+            onClick={() => setActiveTab('login')}
+            className={`py-2 text-xs font-bold rounded-lg transition ${
+              activeTab === 'login'
+                ? 'bg-emerald-500 text-slate-950 shadow-md'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Masuk
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('register')}
+            className={`py-2 text-xs font-bold rounded-lg transition ${
+              activeTab === 'register'
+                ? 'bg-emerald-500 text-slate-950 shadow-md'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Daftar Baru
+          </button>
+        </div>
+
+        {/* Tab Form Render */}
+        {activeTab === 'login' ? (
+          <LoginForm onSwitchToRegister={() => setActiveTab('register')} />
+        ) : (
+          <RegisterForm onSwitchToLogin={() => setActiveTab('login')} />
+        )}
+      </div>
+
+      {/* Guest Navigation Note */}
+      <div className="text-center mt-6">
+        <Link
+          href="/routes"
+          className="text-xs text-slate-400 hover:text-emerald-400 transition"
+        >
+          ← Lanjutkan Analisis Rute sebagai Pengunjung (Tanpa Login)
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6">
+      <Suspense
+        fallback={
+          <div className="text-slate-400 text-sm animate-pulse">
+            Memuat formulir autentikasi...
+          </div>
+        }
+      >
+        <AuthContent />
+      </Suspense>
     </div>
   );
 }

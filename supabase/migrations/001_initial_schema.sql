@@ -1,6 +1,8 @@
 -- ==========================================================
--- Skema Database EcoPulse (Supabase PostgreSQL + RLS)
--- Pemilik: Person 3 (Database & Auth)
+-- Skema Database AANG (Air-Aware Navigation Guidance)
+-- Supabase PostgreSQL + Row-Level Security (RLS)
+-- Pemilik: Person 3 (Database, Auth, & Privacy)
+-- Referensi: CODE_SPEC_AANG.md Bagian 4 & Bagian 8.1
 -- ==========================================================
 
 -- 1. Tabel Profiles (Relasi 1:1 dengan auth.users)
@@ -13,12 +15,13 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Trigger untuk membuat profil secara otomatis saat pendaftaran user baru
+-- Trigger untuk membuat profil default secara otomatis saat pendaftaran user baru (TC-18)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.profiles (user_id, exposure_weight, max_extra_time_percent, history_consent, created_at)
-  VALUES (new.id, 0.50, 30, FALSE, now());
+  VALUES (new.id, 0.50, 30, FALSE, now())
+  ON CONFLICT (user_id) DO NOTHING;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -28,7 +31,7 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- 2. Tabel Trips (Snapshot Perjalanan & Estimasi Paparan)
+-- 2. Tabel Trips (Snapshot Perjalanan & Estimasi Paparan PM2.5)
 CREATE TABLE IF NOT EXISTS public.trips (
   trip_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -57,18 +60,19 @@ CREATE TABLE IF NOT EXISTS public.trips (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Indeks performa query riwayat per pengguna
+-- Indeks performa query riwayat per pengguna (terurut kronologis terbaru)
 CREATE INDEX IF NOT EXISTS idx_trips_user_created ON public.trips (user_id, created_at DESC);
 
 -- ==========================================================
--- ROW LEVEL SECURITY (RLS) POLICIES
+-- ROW LEVEL SECURITY (RLS) POLICIES (TC-22)
+-- Mengisolasi data: Pengguna hanya dapat mengakses miliknya sendiri
 -- ==========================================================
 
 -- Aktifkan RLS
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.trips ENABLE ROW LEVEL SECURITY;
 
--- Kebijakan RLS Profiles: Hanya bisa diakses & diubah oleh pemilik akun
+-- Kebijakan RLS Profiles
 CREATE POLICY "Users can view own profile"
   ON public.profiles FOR SELECT
   USING (auth.uid() = user_id);
@@ -76,6 +80,10 @@ CREATE POLICY "Users can view own profile"
 CREATE POLICY "Users can update own profile"
   ON public.profiles FOR UPDATE
   USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own profile"
+  ON public.profiles FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
 
 -- Kebijakan RLS Trips: Isolasi data perjalanan privat
 CREATE POLICY "Users can view own trips"

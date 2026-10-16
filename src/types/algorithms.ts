@@ -103,6 +103,10 @@ export interface StationUsed {
   freshness: FreshnessStatus;
   /** Tipe data stasiun */
   dataType: StationData['dataType'];
+  /** Koordinat lintang stasiun jika tersedia */
+  lat?: number;
+  /** Koordinat bujur stasiun jika tersedia */
+  lng?: number;
 }
 
 /**
