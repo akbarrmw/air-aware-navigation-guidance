@@ -5,7 +5,7 @@ import { isPointWithinPilotArea } from '@/lib/services/geocodingService';
 import { runAnalysisPipeline } from '@/lib/services/pipelineService';
 import { MOCK_ROUTES } from '@/fixtures/mockRoutes';
 import { MOCK_STATIONS } from '@/fixtures/mockStations';
-import { isTollStep, routeHasToll } from '@/lib/services/routingService';
+import { isTollStep, routeHasToll, routeHasUTurn } from '@/lib/services/routingService';
 
 describe('Person 2 - Backend Services & Normalization', () => {
   it('TC-05: Menghitung usia data dan status kesegaran (fresh, stale, expired)', () => {
@@ -176,4 +176,59 @@ describe('Person 2 - Backend Services & Normalization', () => {
     expect(expectedMotorDuration).toBeLessThan(carDurationSec);
     expect(expectedWalkDuration).toBeGreaterThan(carDurationSec * 5);
   });
+
+  it('TC-29: Deteksi manuver putar balik (U-turn) dan penelusuran balik (backtracking) pada rute alternatif', () => {
+    // 1. Rute dengan manuver eksplisit U-turn dari OSRM
+    const uTurnRoute = {
+      legs: [
+        {
+          steps: [
+            { name: 'Jalan Brigjen Sudiarto', maneuver: { type: 'turn', modifier: 'right' } },
+            { name: 'Gang Melati', maneuver: { type: 'turn', modifier: 'u-turn' } },
+            { name: 'Jalan Brigjen Sudiarto', maneuver: { type: 'turn', modifier: 'left' } },
+          ],
+        },
+      ],
+    };
+    expect(routeHasUTurn(uTurnRoute)).toBe(true);
+
+    // 2. Rute dengan backtracking di titik via (masuk dan keluar lewat jalan yang sama)
+    const deadEndBacktrackingRoute = {
+      legs: [
+        {
+          steps: [
+            { name: 'Jalan Majapahit' },
+            { name: 'Gang Buntu Permai' },
+          ],
+        },
+        {
+          steps: [
+            { name: 'Gang Buntu Permai' },
+            { name: 'Jalan Majapahit' },
+          ],
+        },
+      ],
+    };
+    expect(routeHasUTurn(deadEndBacktrackingRoute)).toBe(true);
+
+    // 3. Rute alternatif tembus normal (tanpa U-turn / backtracking)
+    const cleanThroughRoute = {
+      legs: [
+        {
+          steps: [
+            { name: 'Jalan Pandanaran', maneuver: { type: 'turn', modifier: 'straight' } },
+            { name: 'Jalan Gajah Mada', maneuver: { type: 'turn', modifier: 'right' } },
+          ],
+        },
+        {
+          steps: [
+            { name: 'Jalan Pemuda', maneuver: { type: 'turn', modifier: 'left' } },
+            { name: 'Tugu Muda', maneuver: { type: 'arrive', modifier: 'straight' } },
+          ],
+        },
+      ],
+    };
+    expect(routeHasUTurn(cleanThroughRoute)).toBe(false);
+  });
 });
+

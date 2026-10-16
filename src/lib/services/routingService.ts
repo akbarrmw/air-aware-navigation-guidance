@@ -54,9 +54,66 @@ interface OsrmRouteResponse {
         ref?: string;
         distance?: number;
         duration?: number;
+        maneuver?: {
+          type?: string;
+          modifier?: string;
+        };
       }>;
     }>;
   }>;
+}
+
+/**
+ * Mendeteksi apakah rute mengandung manuver putar balik (U-turn) atau backtracking di jalan buntu.
+ */
+export function routeHasUTurn(route: {
+  legs?: Array<{
+    steps?: Array<{
+      name?: string;
+      ref?: string;
+      distance?: number;
+      duration?: number;
+      maneuver?: {
+        type?: string;
+        modifier?: string;
+      };
+    }>;
+  }>;
+}): boolean {
+  if (!route.legs) return false;
+
+  for (const leg of route.legs) {
+    if (!leg.steps) continue;
+    for (const step of leg.steps) {
+      const modifier = (step.maneuver?.modifier || '').toLowerCase().replace(/[^a-z]/g, '');
+      const type = (step.maneuver?.type || '').toLowerCase().replace(/[^a-z]/g, '');
+      if (modifier === 'uturn' || type === 'uturn') {
+        return true;
+      }
+    }
+  }
+
+  // Deteksi backtracking di titik perantara:
+  // Jika kendaraan tiba di titik via lewat Jalan X dan keluar kembali lewat Jalan X yang sama persis
+  if (route.legs.length >= 2) {
+    for (let i = 0; i < route.legs.length - 1; i++) {
+      const currentLegSteps = route.legs[i]?.steps || [];
+      const nextLegSteps = route.legs[i + 1]?.steps || [];
+      const arrivalStep = currentLegSteps[currentLegSteps.length - 1];
+      const departureStep = nextLegSteps[0];
+
+      if (
+        arrivalStep?.name &&
+        departureStep?.name &&
+        arrivalStep.name.trim() !== '' &&
+        arrivalStep.name.toLowerCase() === departureStep.name.toLowerCase()
+      ) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -137,7 +194,7 @@ async function fetchGuardedAlternativeRoute(
 
   for (const via of viaCandidates) {
     try {
-      const url = `${CONSTANTS.DEFAULT_ROUTING_URL}/route/v1/driving/${origin.lng},${origin.lat};${via.lng.toFixed(5)},${via.lat.toFixed(5)};${destination.lng},${destination.lat}?overview=full&geometries=geojson&steps=true`;
+      const url = `${CONSTANTS.DEFAULT_ROUTING_URL}/route/v1/driving/${origin.lng},${origin.lat};${via.lng.toFixed(5)},${via.lat.toFixed(5)};${destination.lng},${destination.lat}?overview=full&geometries=geojson&steps=true&continue_straight=true`;
       const res = await fetchWithTimeout(url, { timeoutMs: 3500 });
       if (!res.ok) continue;
 
@@ -145,6 +202,12 @@ async function fetchGuardedAlternativeRoute(
       if (data.code === 'Ok' && Array.isArray(data.routes) && data.routes.length > 0) {
         const alt = data.routes[0];
         const altHasToll = routeHasToll(alt);
+        const altHasUTurn = routeHasUTurn(alt);
+
+        // Jika rute alternatif menghasilkan manuver putar balik (U-turn) atau masuk gang buntu lalu balik lagi, tolak
+        if (altHasUTurn) {
+          continue;
+        }
 
         // Jika mode melarang jalan tol, pastikan rute alternatif benar-benar bebas tol
         if (mustAvoidToll && altHasToll) {
