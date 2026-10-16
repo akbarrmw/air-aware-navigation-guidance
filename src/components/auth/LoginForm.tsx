@@ -61,14 +61,14 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
       {errorMessage && (
         <div
           role="alert"
-          className="p-3 bg-rose-950/80 border border-rose-700/60 rounded-xl text-rose-300 text-xs leading-relaxed"
+          className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs leading-relaxed font-medium"
         >
           {errorMessage}
         </div>
       )}
 
       <div>
-        <label className="block text-xs uppercase font-bold tracking-wider text-slate-400 mb-1.5">
+        <label className="block text-xs uppercase font-bold tracking-wider text-slate-700 mb-1.5">
           Alamat Email
         </label>
         <input
@@ -78,19 +78,19 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="nama@email.com"
-          className="w-full bg-slate-950/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
+          className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition"
         />
       </div>
 
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className="block text-xs uppercase font-bold tracking-wider text-slate-400">
+          <label className="block text-xs uppercase font-bold tracking-wider text-slate-700">
             Kata Sandi
           </label>
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="text-[11px] text-emerald-400 hover:underline"
+            className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800"
           >
             {showPassword ? 'Sembunyikan' : 'Tampilkan'}
           </button>
@@ -102,25 +102,25 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="••••••••"
-          className="w-full bg-slate-950/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
+          className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition"
         />
       </div>
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-bold rounded-xl text-sm transition shadow-lg shadow-emerald-500/20 mt-2"
+        className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 text-white font-bold rounded-xl text-sm transition shadow-md shadow-emerald-600/20 mt-2"
       >
         {loading ? 'Memverifikasi...' : 'Masuk ke Akun'}
       </button>
 
       {onSwitchToRegister && (
-        <p className="text-center text-xs text-slate-400 pt-3">
+        <p className="text-center text-xs text-slate-500 pt-3">
           Belum memiliki akun AANG?{' '}
           <button
             type="button"
             onClick={onSwitchToRegister}
-            className="text-emerald-400 font-semibold hover:underline"
+            className="text-emerald-700 font-bold hover:underline"
           >
             Daftar Sekarang
           </button>

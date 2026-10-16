@@ -118,6 +118,8 @@ function RoutePlannerContent() {
   const [saveTripError, setSaveTripError] = useState<string | null>(null);
   const [showDetailsDrawer, setShowDetailsDrawer] = useState(false);
   const [locatingOrigin, setLocatingOrigin] = useState(false);
+  const [mapCenter, setMapCenter] = useState<[number, number] | undefined>(undefined);
+  const [mapZoom, setMapZoom] = useState<number | undefined>(undefined);
 
   const originInputRef = useRef<HTMLInputElement>(null);
   const destInputRef = useRef<HTMLInputElement>(null);
@@ -128,6 +130,9 @@ function RoutePlannerContent() {
     skipOriginSearchRef.current = true;
     setOriginInput(item.label);
     setOriginCoord({ lat: item.lat, lng: item.lng });
+    setAppliedOrigin({ lat: item.lat, lng: item.lng, label: item.label });
+    setMapCenter([item.lat, item.lng]);
+    setMapZoom(15);
     setOriginSuggestions([]);
     setActiveDropdown(null);
   };
@@ -166,6 +171,10 @@ function RoutePlannerContent() {
         skipOriginSearchRef.current = true;
         setOriginInput(detectedLabel);
         setOriginCoord({ lat, lng });
+        // Terapkan titik asal ke peta dan gerakkan kamera peta langsung ke titik GPS pengguna
+        setAppliedOrigin({ lat, lng, label: detectedLabel });
+        setMapCenter([lat, lng]);
+        setMapZoom(15);
         setOriginSuggestions([]);
         setActiveDropdown(null);
         setLocatingOrigin(false);
@@ -722,6 +731,8 @@ function RoutePlannerContent() {
           selectedRouteLabel={selectedRouteLabel}
           onSelectRoute={(label) => setSelectedRouteLabel(label)}
           stations={activeRouteStations}
+          center={mapCenter}
+          zoom={mapZoom}
         />
       </div>
 
