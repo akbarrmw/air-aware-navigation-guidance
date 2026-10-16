@@ -60,18 +60,18 @@ export function ConsentBanner({ hasConsent, onConsentUpdated }: ConsentBannerPro
   };
 
   return (
-    <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 rounded-2xl p-4 sm:p-5 mb-8 backdrop-blur-md">
+    <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-4 sm:p-5 mb-8 shadow-sm">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-start gap-3">
-          <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 mt-0.5">
+          <div className="p-2 rounded-xl bg-amber-100 text-amber-700 mt-0.5 shrink-0">
             <AlertCircle className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-amber-300 flex items-center gap-1.5">
+            <h3 className="text-sm font-bold text-amber-950 flex items-center gap-1.5">
               <span>Penyimpanan Riwayat Dinonaktifkan</span>
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
             </h3>
-            <p className="text-xs text-slate-300 mt-0.5 leading-relaxed max-w-xl">
+            <p className="text-xs text-amber-900/80 mt-0.5 leading-relaxed max-w-xl">
               AANG menjaga privasi Anda dengan ketat. Riwayat rute dan analisis paparan hanya akan
               disimpan ke akun Anda setelah Anda memberikan izin secara eksplisit.
             </p>
@@ -81,7 +81,7 @@ export function ConsentBanner({ hasConsent, onConsentUpdated }: ConsentBannerPro
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <Link
             href="/settings"
-            className="text-xs text-slate-400 hover:text-white underline underline-offset-4 px-2 py-1.5"
+            className="text-xs font-semibold text-amber-800 hover:text-amber-950 underline underline-offset-4 px-2 py-1.5"
           >
             Pelajari Privasi
           </Link>
@@ -89,7 +89,7 @@ export function ConsentBanner({ hasConsent, onConsentUpdated }: ConsentBannerPro
             type="button"
             onClick={handleEnableConsent}
             disabled={updating}
-            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-amber-500/10"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 disabled:opacity-50 text-slate-950 font-bold rounded-xl text-xs transition shadow-sm"
           >
             <ShieldCheck className="w-4 h-4" />
             <span>{updating ? 'Menyimpan...' : 'Aktifkan Izin'}</span>

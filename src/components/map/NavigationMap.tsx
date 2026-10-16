@@ -199,6 +199,9 @@ export default function NavigationMap({
         const originMarker = L.marker([origin.lat, origin.lng], { icon: originIcon });
         originMarker.bindPopup(`<strong>Titik Keberangkatan</strong><br/>${origin.label || 'Titik Awal'}`);
         markerGroup.addLayer(originMarker);
+        if (!routes || routes.length === 0) {
+          originMarker.openPopup();
+        }
       }
 
       // Marker Titik Singgah / Waypoints (1, 2, 3... - Biru Indigo)
@@ -339,6 +342,21 @@ export default function NavigationMap({
       });
     });
   }, [stations, activeStationId, onSelectStation]);
+
+  // 5. Animasi Kamera Peta (flyTo) saat Center berubah dinamis (misal GPS pengguna terdeteksi)
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !center) return;
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    // Periksa validitas koordinat numerik
+    if (typeof center[0] === 'number' && typeof center[1] === 'number' && !isNaN(center[0]) && !isNaN(center[1])) {
+      map.flyTo(center, zoom || 15, { duration: 1.4, easeLinearity: 0.25 });
+    }
+  }, [center, zoom]);
 
   // Tombol Kontrol Peta
   const handleZoomIn = () => mapInstanceRef.current?.zoomIn();

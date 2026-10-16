@@ -7,6 +7,7 @@ import {
   LayersIcon,
   HistoryIcon,
 } from '@/components/common/Icons';
+import { UserNav } from '@/components/common/UserNav';
 
 export const metadata: Metadata = {
   title: 'AANG — Air-Aware Navigation Guidance',
@@ -64,13 +65,7 @@ export default function RootLayout({
                 <span className="font-semibold text-slate-700">Indonesia Live</span>
               </div>
 
-              <Link
-                href="/login"
-                className="w-8 h-8 rounded-full bg-slate-800 text-white font-bold text-xs flex items-center justify-center hover:bg-slate-700 transition shadow-sm"
-                aria-label="Profil Pengguna"
-              >
-                AA
-              </Link>
+              <UserNav />
             </div>
           </header>
 

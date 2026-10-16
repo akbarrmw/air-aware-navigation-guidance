@@ -45,6 +45,7 @@ export type TripRow = {
   destination_lat: number;
   destination_lng: number;
   route_polyline: string;
+  transport_mode: 'car' | 'motorcycle' | 'walk';
   distance_m: number;
   duration_s: number;
   analyzed_at: string;
@@ -68,6 +69,7 @@ export type TripRow = {
  */
 export type TripInsertRow = Omit<TripRow, 'trip_id' | 'created_at'> & {
   trip_id?: string;
+  transport_mode?: 'car' | 'motorcycle' | 'walk';
   created_at?: string;
 };
 

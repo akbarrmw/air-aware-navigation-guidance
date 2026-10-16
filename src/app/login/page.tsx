@@ -1,7 +1,7 @@
 /**
  * @file page.tsx
  * @description Halaman Autentikasi Pengguna P-04 (Mode Masuk & Mode Daftar) untuk AANG.
- * @author Person 3 (Database, Auth, & History Services)
+ * @author Person 3 (Database, Auth, & History Services) / Refactored for clean light theme
  * @see CODE_SPEC_AANG.md Bagian 8.1 & FR-10
  */
 
@@ -19,19 +19,19 @@ function AuthContent() {
   return (
     <div className="w-full max-w-md mx-auto">
       {/* Brand Header */}
-      <div className="text-center mb-8">
-        <Link href="/" className="inline-flex items-center gap-2 mb-4 group">
-          <span className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center font-black text-slate-950 shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition">
-            <Leaf className="w-5 h-5 text-slate-950 fill-current" />
+      <div className="text-center mb-6">
+        <Link href="/" className="inline-flex items-center gap-2 mb-3 group">
+          <span className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center font-black text-white shadow-lg shadow-emerald-600/20 group-hover:scale-105 transition">
+            <Leaf className="w-5 h-5 text-white fill-current" />
           </span>
-          <span className="font-extrabold text-2xl tracking-tight text-white">
+          <span className="font-extrabold text-2xl tracking-tight text-slate-900">
             AANG
           </span>
         </Link>
-        <h1 className="text-2xl font-black text-white tracking-tight">
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight">
           {activeTab === 'login' ? 'Selamat Datang Kembali' : 'Mulai Bersama AANG'}
         </h1>
-        <p className="text-slate-400 text-xs mt-1.5 leading-relaxed">
+        <p className="text-slate-600 text-xs mt-1.5 leading-relaxed">
           {activeTab === 'login'
             ? 'Masuk untuk mengakses riwayat rute dan analisis paparan personal Anda.'
             : 'Daftar akun gratis untuk menyimpan perjalanan dan preferensi rute sehat.'}
@@ -39,16 +39,16 @@ function AuthContent() {
       </div>
 
       {/* Auth Card Container */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+      <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xl">
         {/* Tab Toggle Switch */}
-        <div className="grid grid-cols-2 p-1 bg-slate-950/80 border border-slate-800 rounded-xl mb-6">
+        <div className="grid grid-cols-2 p-1 bg-slate-100 border border-slate-200 rounded-xl mb-6">
           <button
             type="button"
             onClick={() => setActiveTab('login')}
             className={`py-2 text-xs font-bold rounded-lg transition ${
               activeTab === 'login'
-                ? 'bg-emerald-500 text-slate-950 shadow-md'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Masuk
@@ -58,8 +58,8 @@ function AuthContent() {
             onClick={() => setActiveTab('register')}
             className={`py-2 text-xs font-bold rounded-lg transition ${
               activeTab === 'register'
-                ? 'bg-emerald-500 text-slate-950 shadow-md'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Daftar Baru
@@ -78,7 +78,7 @@ function AuthContent() {
       <div className="text-center mt-6">
         <Link
           href="/routes"
-          className="text-xs text-slate-400 hover:text-emerald-400 transition"
+          className="text-xs font-semibold text-slate-500 hover:text-emerald-700 transition"
         >
           ← Lanjutkan Analisis Rute sebagai Pengunjung (Tanpa Login)
         </Link>
@@ -89,10 +89,10 @@ function AuthContent() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6">
+    <div className="w-full h-[calc(100vh-56px)] mt-[56px] overflow-y-auto bg-slate-100 flex items-center justify-center py-12 px-4 sm:px-6">
       <Suspense
         fallback={
-          <div className="text-slate-400 text-sm animate-pulse">
+          <div className="text-slate-500 text-sm animate-pulse">
             Memuat formulir autentikasi...
           </div>
         }

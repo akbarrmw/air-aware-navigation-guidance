@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS public.trips (
   destination_lat NUMERIC(9,6) NOT NULL CHECK (destination_lat >= -90 AND destination_lat <= 90),
   destination_lng NUMERIC(9,6) NOT NULL CHECK (destination_lng >= -180 AND destination_lng <= 180),
   route_polyline TEXT NOT NULL,
+  transport_mode TEXT NOT NULL DEFAULT 'car' CHECK (transport_mode IN ('car', 'motorcycle', 'walk')),
   distance_m INTEGER NOT NULL CHECK (distance_m > 0),
   duration_s INTEGER NOT NULL CHECK (duration_s > 0),
   analyzed_at TIMESTAMPTZ NOT NULL,
