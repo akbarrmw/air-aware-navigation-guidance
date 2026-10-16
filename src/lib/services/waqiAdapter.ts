@@ -36,7 +36,7 @@ interface WaqiFeedResponse {
 }
 
 /**
- * Mengambil detail stasiun dari WAQI feed endpoint dengan in-memory cache
+ * Mengambil detail data feed stasiun dari WAQI berdasarkan UID stasiun.
  */
 export async function fetchWaqiStationFeed(
   uid: number,
@@ -68,8 +68,7 @@ export async function fetchWaqiStationFeed(
 }
 
 /**
- * Adapter untuk mengambil stasiun dari WAQI berdasarkan Bounding Box
- * Pemilik: Person 2 (Backend Services)
+ * Mengambil daftar stasiun kualitas udara WAQI dalam batas area koordinat tertentu.
  */
 export async function fetchWaqiStationsInBounds(
   bounds: { south: number; west: number; north: number; east: number },

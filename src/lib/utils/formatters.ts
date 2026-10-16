@@ -1,12 +1,9 @@
 /**
- * @file formatters.ts
- * @description Helper fungsi pemformat waktu dan metrik numerik navigasi.
+ * Utilitas pemformat durasi, waktu tambahan, dan jarak navigasi.
  */
 
 /**
- * Format durasi detik ke dalam format ramah pengguna:
- * - < 60 menit: "23 menit"
- * - >= 60 menit: "1 jam 23 menit" (atau "2 jam" jika menit genap 0)
+ * Memformat durasi detik ke dalam teks menit atau jam.
  */
 export function formatDuration(seconds: number): string {
   if (isNaN(seconds) || seconds <= 0) {
@@ -30,7 +27,7 @@ export function formatDuration(seconds: number): string {
 }
 
 /**
- * Format selisih waktu perjalanan tambahan (misal: "+3 mnt", "+1 jam 5 mnt")
+ * Memformat selisih waktu perjalanan tambahan.
  */
 export function formatExtraTime(extraSeconds: number): string {
   if (!extraSeconds || extraSeconds <= 0) {
@@ -54,7 +51,7 @@ export function formatExtraTime(extraSeconds: number): string {
 }
 
 /**
- * Format jarak meter ke kilometer
+ * Memformat jarak meter ke kilometer.
  */
 export function formatDistance(meters: number): string {
   if (isNaN(meters) || meters <= 0) {

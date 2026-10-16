@@ -1,9 +1,5 @@
 /**
- * @file trips.ts
- * @description Kontrak data penyimpanan riwayat perjalanan, daftar trip pengguna, dan detail riwayat.
- * @author Person 1 (Core Algorithm & System Integration)
- * @module types/trips
- * @see CODE_SPEC_AANG.md Bagian 3.6 & Bagian 4.2
+ * Tipe data riwayat perjalanan dan detail trip.
  */
 
 import type { LatLng, LatLngTuple, LocationPoint } from './common';

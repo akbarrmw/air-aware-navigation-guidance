@@ -1,11 +1,5 @@
 /**
- * @file database.ts
- * @description Tipe data baris tabel database Supabase PostgreSQL (profiles & trips).
- * Digunakan internal oleh Person 3 (Database, Auth, dan Riwayat Perjalanan).
- * 
- * @author Person 3 (Database, Auth & History Services)
- * @module types/database
- * @see CODE_SPEC_AANG.md Bagian 4 & Bagian 8.1
+ * Tipe data baris tabel database Supabase PostgreSQL.
  */
 
 import type { ConfidenceLevel } from './algorithms';

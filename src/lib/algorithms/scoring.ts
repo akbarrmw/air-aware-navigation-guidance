@@ -1,11 +1,5 @@
 /**
- * @file scoring.ts
- * @description Modul skoring multi-kriteria dan ranking rute (ALG-03).
- * Meneruskan fungsi keputusan ke decide.ts dan menyediakan adapter kompatibilitas untuk pipelineService.
- * 
- * @author Person 1 (Core Algorithm & System Integration)
- * @module lib/algorithms/scoring
- * @see CODE_SPEC_AANG.md Bagian 3.8 & Bagian 6 (ALG-03)
+ * Modul skoring multi-kriteria dan perangkingan rute.
  */
 
 import type { RouteCandidate } from '@/types/routing';
@@ -16,7 +10,7 @@ import { decideRoutes, type DecideRoutesInput } from './decide';
 export { decideRoutes, type DecideRoutesInput };
 
 /**
- * Adapter kompatibilitas transisi untuk backward compatibility dengan kode lama (pipelineService).
+ * Melakukan skoring dan perangkingan rute alternatif berdasarkan preferensi pengguna.
  */
 export function scoreAndRankRoutes(
   routesWithEstimates: Array<{ candidate: RouteCandidate; estimate: RouteExposureEstimate }>,

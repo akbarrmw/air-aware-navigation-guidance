@@ -1,8 +1,5 @@
 /**
- * @file page.tsx
- * @description Halaman Autentikasi Pengguna P-04 (Mode Masuk & Mode Daftar) untuk AANG.
- * @author Person 3 (Database, Auth, & History Services) / Refactored for clean light theme
- * @see CODE_SPEC_AANG.md Bagian 8.1 & FR-10
+ * Halaman Autentikasi Pengguna (Masuk & Daftar).
  */
 
 'use client';
@@ -20,10 +17,14 @@ function AuthContent() {
     <div className="w-full max-w-md mx-auto">
       {/* Brand Header */}
       <div className="text-center mb-6">
-        <Link href="/" className="inline-flex items-center gap-2 mb-3 group">
-          <span className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center font-black text-white shadow-lg shadow-emerald-600/20 group-hover:scale-105 transition">
-            <Leaf className="w-5 h-5 text-white fill-current" />
-          </span>
+        <Link href="/" className="inline-flex items-center gap-2.5 mb-3 group">
+          <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center p-0.5 shadow-sm border border-slate-200 group-hover:scale-105 transition overflow-hidden">
+            <img
+              src="/logo.png"
+              alt="Logo AANG"
+              className="w-full h-full object-contain"
+            />
+          </div>
           <span className="font-extrabold text-2xl tracking-tight text-slate-900">
             AANG
           </span>
@@ -80,7 +81,7 @@ function AuthContent() {
           href="/routes"
           className="text-xs font-semibold text-slate-500 hover:text-emerald-700 transition"
         >
-          ← Lanjutkan Analisis Rute sebagai Pengunjung (Tanpa Login)
+          Lanjutkan Analisis Rute sebagai Pengunjung (Tanpa Login)
         </Link>
       </div>
     </div>

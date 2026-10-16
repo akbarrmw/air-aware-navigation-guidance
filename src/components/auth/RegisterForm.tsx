@@ -1,9 +1,5 @@
 /**
- * @file RegisterForm.tsx
- * @description Formulir pendaftaran akun baru dengan validasi kata sandi (AC-10.2) & penanganan status.
- * @author Person 3 (Database, Auth, & History Services)
- * @module components/auth/RegisterForm
- * @see CODE_SPEC_AANG.md Bagian 8.1 & AC-10.2, AC-10.4, ASM-09
+ * Formulir pendaftaran akun pengguna baru.
  */
 
 'use client';
@@ -105,7 +101,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="nama@email.com"
+          placeholder="nama@gmail.com"
           className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition"
         />
       </div>
@@ -129,7 +125,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           autoComplete="new-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Min. 8 karakter (huruf & angka)"
+          placeholder=""
           className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition"
         />
         <span className="block text-[11px] text-slate-500 mt-1">
@@ -147,7 +143,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           autoComplete="new-password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          placeholder="••••••••"
+          placeholder=""
           className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition"
         />
       </div>

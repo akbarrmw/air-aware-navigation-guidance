@@ -1,10 +1,5 @@
 /**
- * @file route.ts
- * @description API Route handler untuk /api/preferences (GET & PUT preferensi rute dan consent pengguna).
- * 
- * @author Person 3 (Database, Auth, & History Services)
- * @module app/api/preferences/route
- * @see CODE_SPEC_AANG.md Bagian 8.1 & FR-12
+ * API Route handler untuk preferensi rute dan privasi pengguna (/api/preferences).
  */
 
 import { withApiHandler, AppError } from '@/lib/server/withApiHandler';
@@ -16,8 +11,7 @@ import {
 import type { PreferencesPayload } from '@/types/trips';
 
 /**
- * GET /api/preferences
- * Mengambil preferensi rute dan status konsensus riwayat pengguna aktif.
+ * Mengambil preferensi rute dan status privasi pengguna aktif.
  */
 export const GET = withApiHandler<PreferencesPayload>(async () => {
   const supabase = await createClient();
@@ -57,8 +51,7 @@ export const GET = withApiHandler<PreferencesPayload>(async () => {
 });
 
 /**
- * PUT /api/preferences
- * Memperbarui preferensi rute dan status konsensus riwayat pengguna aktif.
+ * Memperbarui preferensi rute dan status privasi pengguna aktif.
  */
 export const PUT = withApiHandler<PreferencesPayload, PreferencesPayloadInput>(
   async ({ body }) => {

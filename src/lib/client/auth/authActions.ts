@@ -1,11 +1,5 @@
 /**
- * @file authActions.ts
- * @description Modul aksi autentikasi pengguna Supabase Auth (Sign Up, Sign In, Sign Out).
- * Mematuhi kriteria kata sandi >= 8 karakter kombinasi huruf dan angka (AC-10.2).
- * 
- * @author Person 3 (Database, Auth, & History Services)
- * @module lib/client/auth/authActions
- * @see CODE_SPEC_AANG.md Bagian 8.1, AC-10.2, ASM-09
+ * Modul aksi autentikasi pengguna (Sign Up, Sign In, Sign Out).
  */
 
 import { createClient } from '@/lib/supabase/client';
@@ -18,9 +12,7 @@ export interface AuthActionResult {
 }
 
 /**
- * Validasi kekuatan kata sandi sesuai spesifikasi AC-10.2:
- * - Minimal 8 karakter
- * - Wajib mengandung kombinasi huruf dan angka
+ * Memvalidasi kekuatan kata sandi pengguna.
  */
 export function validatePassword(password: string): { isValid: boolean; error?: string } {
   if (!password || password.length < 8) {
@@ -44,8 +36,7 @@ export function validatePassword(password: string): { isValid: boolean; error?: 
 }
 
 /**
- * Mendaftarkan akun pengguna baru via Supabase Auth (Email + Password).
- * Konfirmasi email dinonaktifkan untuk kemudahan hackathon (ASM-09).
+ * Mendaftarkan akun pengguna baru via email dan kata sandi.
  */
 export async function signUpWithEmail(
   email: string,
@@ -81,8 +72,7 @@ export async function signUpWithEmail(
 }
 
 /**
- * Masuk ke akun pengguna menggunakan Email dan Password.
- * Menghasilkan pesan kesalahan generik jika otentikasi gagal untuk keamanan (AC-10.2).
+ * Masuk ke akun pengguna menggunakan email dan kata sandi.
  */
 export async function signInWithEmail(
   email: string,
@@ -118,7 +108,7 @@ export async function signInWithEmail(
 }
 
 /**
- * Keluar dari sesi akun saat ini (Sign Out).
+ * Keluar dari sesi akun saat ini.
  */
 export async function signOut(): Promise<AuthActionResult> {
   const supabase = createClient();

@@ -16,8 +16,7 @@ export interface RawStationInput {
 }
 
 /**
- * Menghitung usia data dalam menit dan menentukan status kesegaran (freshness)
- * Aturan: fresh <= 3 jam (180 mnt), stale <= 24 jam (1440 mnt), expired > 24 jam atau tanpa waktu
+ * Menghitung usia data dalam menit dan menentukan status kesegaran (freshness).
  */
 export function calculateFreshness(observedAtIso: string | null | undefined): {
   ageMinutes: number;
@@ -60,8 +59,7 @@ export function calculateFreshness(observedAtIso: string | null | undefined): {
 }
 
 /**
- * Menormalisasi raw station data menjadi format standar StationData
- * Pemilik: Person 2 (Backend Services)
+ * Menormalisasi raw station data menjadi format standar StationData.
  */
 export function normalizeStation(raw: RawStationInput): StationData {
   const { ageMinutes, freshness, utcIso } = calculateFreshness(raw.observedAt);

@@ -1,11 +1,5 @@
 /**
- * @file page.tsx
- * @description Halaman Pengaturan Preferensi, Privasi, & Manajemen Akun P-07 untuk AANG.
- * Mengimplementasikan kontrol privasi pengguna, slider preferensi, dan zona berbahaya (TC-23).
- * 
- * @author Person 3 (Database, Auth, & History Services)
- * @module app/settings/page
- * @see CODE_SPEC_AANG.md Bagian 8.1 & FR-12, AC-13.1, TC-23
+ * Halaman Pengaturan Preferensi, Privasi, dan Manajemen Akun.
  */
 
 'use client';

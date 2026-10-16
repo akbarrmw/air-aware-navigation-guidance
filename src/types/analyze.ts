@@ -1,9 +1,5 @@
 /**
- * @file analyze.ts
- * @description Kontrak data permohonan analisis rute dan payload respons lengkap (/api/routes/analyze).
- * @author Person 1 (Core Algorithm & System Integration)
- * @module types/analyze
- * @see CODE_SPEC_AANG.md Bagian 3.6
+ * Tipe data permohonan analisis rute dan payload respons lengkap.
  */
 
 import type { DataType, LocationPoint } from './common';

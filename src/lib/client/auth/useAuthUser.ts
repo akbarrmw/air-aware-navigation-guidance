@@ -1,9 +1,5 @@
 /**
- * @file useAuthUser.ts
- * @description Hook React untuk memantau status login dan profil pengguna secara real-time.
- * @author Person 3 (Database, Auth, & History Services)
- * @module lib/client/auth/useAuthUser
- * @see CODE_SPEC_AANG.md Bagian 8.1 & FR-10
+ * Hook React untuk memantau status autentikasi dan profil pengguna.
  */
 
 'use client';
@@ -21,6 +17,9 @@ export interface UseAuthUserResult {
   refetchProfile: () => Promise<void>;
 }
 
+/**
+ * Hook untuk memantau status autentikasi dan profil pengguna aktif.
+ */
 export function useAuthUser(): UseAuthUserResult {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<ProfileRow | null>(null);

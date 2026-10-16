@@ -1,9 +1,5 @@
 /**
- * @file index.ts
- * @description Barrel export terpadu untuk semua modul tipe data AANG (Gate G0 Frozen Contract).
- * @author Person 1 (Core Algorithm & System Integration)
- * @module types
- * @see CODE_SPEC_AANG.md Bagian 3
+ * Export terpadu tipe data sistem AANG.
  */
 
 export * from './common';

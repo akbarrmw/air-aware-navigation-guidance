@@ -1,10 +1,5 @@
 /**
- * @file tripsApi.ts
- * @description Modul klien API ter-type aman untuk pemanggilan endpoint riwayat perjalanan (/api/trips).
- * 
- * @author Person 3 (Database, Auth, & History Services)
- * @module lib/client/tripsApi
- * @see CODE_SPEC_AANG.md Bagian 8.1
+ * Modul klien API untuk pemanggilan endpoint riwayat perjalanan (/api/trips).
  */
 
 import type { ApiResponse } from '@/types/api';
@@ -54,7 +49,7 @@ export async function fetchTripsList(
 }
 
 /**
- * Mengambil snapshot detail mendalam satu perjalanan berdasarkan ID (P-06).
+ * Mengambil detail perjalanan berdasarkan ID.
  */
 export async function fetchTripDetail(
   tripId: string
@@ -89,7 +84,7 @@ export async function deleteTripItem(
 }
 
 /**
- * Menghapus seluruh riwayat perjalanan pengguna (AC-13.1).
+ * Menghapus seluruh riwayat perjalanan pengguna.
  */
 export async function clearAllTripsHistory(): Promise<
   ApiResponse<{ success: boolean; message: string }>

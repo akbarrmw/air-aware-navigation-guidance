@@ -1,18 +1,17 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import './globals.css';
-import {
-  LeafLogo,
-  RouteIcon,
-  LayersIcon,
-  HistoryIcon,
-} from '@/components/common/Icons';
 import { UserNav } from '@/components/common/UserNav';
+import { Navbar } from '@/components/common/Navbar';
 
 export const metadata: Metadata = {
   title: 'AANG — Air-Aware Navigation Guidance',
   description:
     'Platform navigasi cerdas yang membantu masyarakat perkotaan memperkirakan paparan polusi PM2.5 dan memilih rute perjalanan yang lebih sehat.',
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
 };
 
 export default function RootLayout({
@@ -34,9 +33,13 @@ export default function RootLayout({
         <div className="relative w-full h-screen overflow-hidden bg-slate-100 flex flex-col">
           {/* Google Maps Style Floating Topbar Header */}
           <header className="topbar">
-            <Link href="/" className="brand">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600">
-                <LeafLogo />
+            <Link href="/" className="brand group">
+              <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center p-0.5 shadow-sm border border-slate-200/80 group-hover:scale-105 transition overflow-hidden">
+                <img
+                  src="/logo.png"
+                  alt="Logo AANG"
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div className="brand-copy">
                 <span className="brand-name">AANG</span>
@@ -44,20 +47,8 @@ export default function RootLayout({
               </div>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200" aria-label="Navigasi Utama">
-              <Link href="/routes" className="nav-link">
-                <RouteIcon size={16} />
-                <span>Navigasi Rute</span>
-              </Link>
-              <Link href="/map" className="nav-link">
-                <LayersIcon size={16} />
-                <span>Peta Polusi</span>
-              </Link>
-              <Link href="/history" className="nav-link">
-                <HistoryIcon size={16} />
-                <span>Riwayat</span>
-              </Link>
-            </nav>
+            {/* Dynamic Active Navbar with Elevation Shadow */}
+            <Navbar />
 
             <div className="flex items-center gap-3">
               <div className="live-badge hidden sm:flex">

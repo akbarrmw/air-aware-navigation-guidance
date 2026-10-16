@@ -1,10 +1,5 @@
 /**
- * @file route.ts
- * @description API Route handler untuk /api/trips/[id] (GET detail snapshot, DELETE item tunggal).
- * 
- * @author Person 3 (Database, Auth, & History Services)
- * @module app/api/trips/[id]/route
- * @see CODE_SPEC_AANG.md Bagian 8.1 & FR-11
+ * API Route handler untuk detail dan penghapusan riwayat perjalanan spesifik (/api/trips/[id]).
  */
 
 import { withApiHandler, AppError } from '@/lib/server/withApiHandler';
@@ -13,7 +8,6 @@ import type { TripDetail } from '@/types/trips';
 import { getTripById, deleteTrip } from '@/lib/trips/tripService';
 
 /**
- * GET /api/trips/[id]
  * Mengambil detail snapshot lengkap perjalanan berdasarkan ID.
  */
 export const GET = withApiHandler<TripDetail>(
@@ -38,7 +32,6 @@ export const GET = withApiHandler<TripDetail>(
 );
 
 /**
- * DELETE /api/trips/[id]
  * Menghapus satu item riwayat perjalanan.
  */
 export const DELETE = withApiHandler<{ success: boolean; message: string }>(

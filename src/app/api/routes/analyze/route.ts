@@ -1,9 +1,5 @@
 /**
- * @file route.ts
- * @description Endpoint analisis rute dan estimasi paparan polusi udara (POST /api/routes/analyze).
- * @author Person 2 (Backend & External APIs) / Refactored with withApiHandler by Person 1
- * @module app/api/routes/analyze/route
- * @see CODE_SPEC_AANG.md Bagian 6 & 11 (Gate G0)
+ * Endpoint analisis rute dan estimasi paparan polusi udara.
  */
 
 import { withApiHandler } from '@/lib/server/withApiHandler';
@@ -12,8 +8,7 @@ import { runAnalysisPipeline } from '@/lib/services/pipelineService';
 import type { AnalyzeRoutesResponseData } from '@/types/analyze';
 
 /**
- * Handler POST /api/routes/analyze
- * Menerima titik origin, destination, dan preferensi rute, lalu mengembalikan analisis komparatif rute A/B/C.
+ * Handler POST untuk analisis komparatif rute alternatif.
  */
 export const POST = withApiHandler<AnalyzeRoutesResponseData, AnalyzeRoutesRequestInput>(
   async ({ body }) => {

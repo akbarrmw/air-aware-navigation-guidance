@@ -1,11 +1,5 @@
 /**
- * @file StationDetailPanel.tsx
- * @description Panel rincian informasi satu stasiun kualitas udara yang dipilih (P-02).
- * Menampilkan konsentrasi PM2.5, polutan dominan, usia data, badge kesegaran, dan atribusi sumber data.
- * 
- * @author Person 3 (Database, Auth, & History Services)
- * @module components/air-map/StationDetailPanel
- * @see CODE_SPEC_AANG.md Bagian 8.1 & FR-02
+ * Panel rincian informasi stasiun kualitas udara yang dipilih.
  */
 
 'use client';

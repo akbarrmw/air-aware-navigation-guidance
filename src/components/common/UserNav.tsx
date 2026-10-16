@@ -1,8 +1,5 @@
 /**
- * @file UserNav.tsx
- * @description Komponen status pengguna dan navigasi akun di header topbar (Masuk / Profil / Logout).
- * @author Person 3 / Enhanced for consistent UI
- * @module components/common/UserNav
+ * Komponen status pengguna dan navigasi akun di header navigasi.
  */
 
 'use client';

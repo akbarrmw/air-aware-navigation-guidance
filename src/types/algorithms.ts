@@ -1,9 +1,5 @@
 /**
- * @file algorithms.ts
- * @description Kontrak tipe mesin algoritma mitigasi polusi: estimasi paparan, pembagian segmen, interpolasi IDW, perbandingan Pareto, dan keputusan rekomendasi rute.
- * @author Person 1 (Core Algorithm & System Integration)
- * @module types/algorithms
- * @see CODE_SPEC_AANG.md Bagian 3.5 & 3.8
+ * Tipe data algoritma navigasi, interpolasi, dan evaluasi paparan polusi.
  */
 
 import type { AqiCategoryCode } from './aqiScale';

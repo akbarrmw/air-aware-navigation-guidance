@@ -1,11 +1,5 @@
 /**
- * @file AirQualityMap.tsx
- * @description Peta interaktif Leaflet SSR-safe untuk visualisasi sebaran stasiun kualitas udara (P-02).
- * Merender marker stasiun dengan warna gradasi AQI dan melaporkan perubahan viewport (moveend / TC-33).
- * 
- * @author Person 3 (Database, Auth, & History Services)
- * @module components/air-map/AirQualityMap
- * @see CODE_SPEC_AANG.md Bagian 8.1 & TC-33
+ * Peta interaktif untuk visualisasi sebaran stasiun kualitas udara.
  */
 
 'use client';

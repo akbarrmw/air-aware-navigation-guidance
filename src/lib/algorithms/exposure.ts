@@ -1,11 +1,5 @@
 /**
- * @file exposure.ts
- * @description Modul estimasi paparan polusi akumulatif sepanjang rute navigasi (ALG-01).
- * Mengintegrasikan konsentrasi PM2.5 tiap segmen terinterpolasi terhadap waktu tempuh rute.
- * 
- * @author Person 1 (Core Algorithm & System Integration)
- * @module lib/algorithms/exposure
- * @see CODE_SPEC_AANG.md Bagian 3.8 & Bagian 6 (ALG-01, FR-05, FR-09, TC-01, TC-04)
+ * Modul estimasi paparan polusi akumulatif sepanjang rute navigasi.
  */
 
 import type { StationData } from '@/types/air-quality';
@@ -34,21 +28,7 @@ export interface ComputeRouteExposureInput {
 }
 
 /**
- * ALG-01: Menghitung estimasi paparan polusi udara akumulatif untuk suatu kandidat rute.
- * 
- * Tahapan kalkulasi:
- * 1. Pemotongan rute menjadi segmen diskrit per PAR-01 (default 500m).
- * 2. Asumsi kecepatan homogen: durasi segmen Δt_i = T × (L_i / L_total).
- * 3. Interpolasi IDW PM2.5 pada titik tengah setiap segmen (ALG-02).
- * 4. Perhitungan rasio cakupan: jika coverage < PAR-08 (20%), set EI = null, confidence = 'unavailable' (TC-04).
- * 5. Perhitungan konsentrasi rata-rata terbobot waktu (avgPm25) pada segmen berdata.
- * 6. Imputasi segmen yang tidak memiliki stasiun dengan avgPm25 (isPartiallyImputed = true).
- * 7. Akumulasi Exposure Index: EI = Σ (PM2.5_segmen × Δt_segmen_menit).
- * 8. Identifikasi top 3 segmen kontributor polusi tertinggi.
- * 9. Evaluasi Confidence Level (High, Medium, Low, Unavailable) (TC-07).
- * 
- * @param input Objek parameter input rute, stasiun pemantau, konfigurasi params, dan waktu observasi
- * @returns RouteExposureEstimate lengkap
+ * Menghitung estimasi paparan polusi udara akumulatif untuk suatu kandidat rute.
  */
 export function computeRouteExposure(input: ComputeRouteExposureInput): RouteExposureEstimate {
   const { route, stations } = input;
@@ -219,7 +199,7 @@ export function computeRouteExposure(input: ComputeRouteExposureInput): RouteExp
 }
 
 /**
- * Alias kompatibilitas transisi untuk backward compatibility dengan kode lama.
+ * Menghitung estimasi paparan polusi rute dengan parameter default.
  */
 export function calculateRouteExposure(
   route: RouteCandidate,

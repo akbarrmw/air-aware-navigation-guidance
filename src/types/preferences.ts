@@ -1,9 +1,5 @@
 /**
- * @file preferences.ts
- * @description Preferensi pembobotan optimasi rute pengguna antara kecepatan waktu dan kebersihan paparan polusi udara.
- * @author Person 1 (Core Algorithm & System Integration)
- * @module types/preferences
- * @see CODE_SPEC_AANG.md Bagian 3.4
+ * Tipe data preferensi optimasi rute pengguna.
  */
 
 /**

@@ -1,21 +1,11 @@
 /**
- * @file polyline.ts
- * @description Implementasi algoritma Google Encoded Polyline Format (presisi 5 desimal).
- * Kompatibel dengan Mapbox, Leaflet, dan OSRM tanpa dependensi eksternal.
- * 
- * @author Person 3 (Database, Auth, & History Services)
- * @module lib/trips/polyline
- * @see https://developers.google.com/maps/documentation/utilities/polylinealgorithm
+ * Utilitas enkoding dan dekoding Google Encoded Polyline Format.
  */
 
 import type { LatLngTuple } from '@/types/common';
 
 /**
- * Mengenkode array koordinat [latitude, longitude] menjadi encoded polyline string.
- * Presisi: 1e5 (5 desimal ~1 meter).
- * 
- * @param coordinates Array pasangan [lat, lng]
- * @returns String encoded polyline
+ * Mengenkode array koordinat menjadi encoded polyline string.
  */
 export function encodePolyline(coordinates: LatLngTuple[]): string {
   if (!coordinates || coordinates.length === 0) {
@@ -41,10 +31,7 @@ export function encodePolyline(coordinates: LatLngTuple[]): string {
 }
 
 /**
- * Men-decode string encoded polyline menjadi array koordinat [latitude, longitude].
- * 
- * @param encodedString String polyline
- * @returns Array pasangan koordinat [lat, lng]
+ * Men-decode string encoded polyline menjadi array koordinat.
  */
 export function decodePolyline(encodedString: string): LatLngTuple[] {
   if (!encodedString || encodedString.trim().length === 0) {

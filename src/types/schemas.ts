@@ -1,9 +1,5 @@
 /**
- * @file schemas.ts
- * @description Skema validasi Zod terpadu untuk permintaan API klien dan server (Single Source of Truth).
- * @author Person 1 (Core Algorithm & System Integration)
- * @module types/schemas
- * @see CODE_SPEC_AANG.md Bagian 3.7 & AC-10.4, TC-21
+ * Skema validasi Zod untuk permintaan API klien dan server.
  */
 
 import { z } from 'zod';

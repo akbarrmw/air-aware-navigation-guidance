@@ -1,9 +1,5 @@
 /**
- * @file segmentation.ts
- * @description Pemotongan lintasan rute navigasi menjadi segmen-segmen diskrit seragam (PAR-01).
- * @author Person 1 (Core Algorithm & System Integration)
- * @module lib/algorithms/segmentation
- * @see CODE_SPEC_AANG.md Bagian 3.8 & Bagian 6 (FR-05, TC-02, TC-26)
+ * Modul pemotongan lintasan rute navigasi menjadi segmen-segmen diskrit.
  */
 
 import type { LatLngTuple } from '@/types/common';
@@ -11,16 +7,7 @@ import type { PathSegment } from '@/types/algorithms';
 import { haversineMeters, pathLengthMeters, interpolatePoint } from './geoMath';
 
 /**
- * Memecah array koordinat lintasan rute menjadi segmen-segmen diskrit dengan panjang seragam (PAR-01).
- * 
- * Aturan algoritma:
- * 1. Jika rute lebih pendek dari `segmentLengthMeters` (< 500m), seluruh rute menjadi 1 segmen tunggal (TC-26).
- * 2. Panjang setiap segmen diusahakan mendekati `segmentLengthMeters` (default 500m).
- * 3. Segmen terakhir menampung sisa jarak dan diperbolehkan lebih pendek dari `segmentLengthMeters`.
- * 
- * @param path Array koordinat polyline rute [lat, lng]
- * @param segmentLengthMeters Batas panjang potongan per segmen (PAR-01, default: 500m)
- * @returns Array PathSegment berisi koordinat potongan dan rentang jarak kumulatif
+ * Memecah array koordinat lintasan rute menjadi segmen-segmen diskrit dengan panjang seragam.
  */
 export function splitPath(
   path: LatLngTuple[],

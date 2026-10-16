@@ -24,7 +24,7 @@ export class RoutingServiceError extends Error {
 }
 
 /**
- * Utilitas jarak cepat untuk validasi jarak minimum asal-tujuan (100 meter)
+ * Menghitung estimasi jarak langsung antara dua titik koordinat dalam meter.
  */
 function getApproxDistanceMeters(p1: RoutePoint, p2: RoutePoint): number {
   const R = 6371000;
@@ -60,7 +60,7 @@ interface OsrmRouteResponse {
 }
 
 /**
- * Mendeteksi apakah suatu step rute merupakan ruas jalan tol.
+ * Mendeteksi apakah segmen rute merupakan jalan tol.
  */
 export function isTollStep(step: { name?: string; ref?: string }): boolean {
   const name = (step.name || '').toLowerCase();
@@ -182,10 +182,7 @@ async function fetchGuardedAlternativeRoute(
 }
 
 /**
- * Service Routing Utama (OSRM)
- * Menghitung rute navigasi riil di seluruh jaringan jalan Indonesia
- * Mendukung pemilihan moda (mobil, motor, pejalan kaki) dengan aturan jalan tol dan kecepatan homogen.
- * Pemilik: Person 2 (Backend Services)
+ * Menghitung rute navigasi alternatif berdasarkan titik awal, tujuan, dan moda transportasi.
  */
 export async function getRouteAlternatives(
   origin: RoutePoint,

@@ -1,11 +1,5 @@
 /**
- * @file recommendation.ts
- * @description Mesin aturan (Rule Engine) anjuran aksi dan saran mitigasi kesehatan non-klinis (ALG-04).
- * Mengevaluasi aturan RULE-01 s/d RULE-07 berdasarkan estimasi paparan rute.
- * 
- * @author Person 1 (Core Algorithm & System Integration)
- * @module lib/algorithms/recommendation
- * @see CODE_SPEC_AANG.md Bagian 3.8 & Bagian 6 (ALG-04, PRD Bagian 9.7)
+ * Mesin aturan anjuran aksi dan saran mitigasi kesehatan non-klinis.
  */
 
 import type {
@@ -25,15 +19,7 @@ const SEVERITY_PRIORITY: Record<ActionMessage['severity'], number> = {
 };
 
 /**
- * ALG-04: Mengevaluasi aturan rekomendasi tindakan proteksi kesehatan (RULE-01 s/d RULE-07).
- * 
- * Persyaratan ketat PRD Pasal 9.7:
- * - Redaksi kalimat 100% netral dan non-klinis.
- * - Tidak memuat klaim dosis inhalasi individual atau diagnosis medis.
- * - Mengembalikan maksimal 3 pesan terbaik terurut berdasarkan tingkat keparahan (warning > attention > info).
- * 
- * @param ctx Konteks evaluasi rekomendasi (rute terpilih, rute tercepat, seluruh rute, waktu sekarang)
- * @returns Array ActionMessage maksimal 3 pesan berprioritas
+ * Mengevaluasi aturan rekomendasi tindakan proteksi kesehatan berdasarkan estimasi paparan rute.
  */
 export function evaluateRecommendations(ctx: RecommendationContext): ActionMessage[] {
   const { recommendedRoute, fastestRoute } = ctx;
@@ -145,7 +131,7 @@ export function evaluateRecommendations(ctx: RecommendationContext): ActionMessa
 }
 
 /**
- * Adapter fungsi lama untuk memelihara kompatibilitas panggilan fungsi.
+ * Menghasilkan rekomendasi tindakan proteksi kesehatan untuk estimasi rute.
  */
 export function generateRecommendations(
   recommendedEstimate: RouteExposureEstimate,

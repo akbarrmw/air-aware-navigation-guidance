@@ -1,6 +1,5 @@
 /**
- * Konfigurasi layanan eksternal dan kota pilot (PRD Bagian 8 & 12)
- * Pemilik: Person 2 (Backend Services)
+ * Konfigurasi layanan eksternal dan wilayah kota pilot.
  */
 export const CONSTANTS = {
   // Kota Pilot: Semarang Kota [minLat, minLng, maxLat, maxLng]

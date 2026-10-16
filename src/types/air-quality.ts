@@ -1,9 +1,5 @@
 /**
- * @file air-quality.ts
- * @description Kontrak data stasiun pemantau kualitas udara dan payload endpoint stasiun.
- * @author Person 1 (Core Algorithm & System Integration)
- * @module types/air-quality
- * @see CODE_SPEC_AANG.md Bagian 3.3b
+ * Tipe data stasiun pemantau kualitas udara.
  */
 
 import type { DataType, BoundingBox } from './common';

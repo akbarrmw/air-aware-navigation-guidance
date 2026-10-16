@@ -1,9 +1,5 @@
 /**
- * @file index.ts
- * @description Barrel export terpadu seluruh fungsi dan utilitas mesin algoritma AANG (Bagian 3.8 & Bagian 6).
- * @author Person 1 (Core Algorithm & System Integration)
- * @module lib/algorithms
- * @see CODE_SPEC_AANG.md Bagian 3.8
+ * Export modul dan algoritma sistem navigasi AANG.
  */
 
 export * from './geoMath';

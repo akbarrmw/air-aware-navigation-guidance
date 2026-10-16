@@ -1,9 +1,5 @@
 /**
- * @file LoginForm.tsx
- * @description Formulir masuk (Sign In) dengan validasi dan penanganan status responsif.
- * @author Person 3 (Database, Auth, & History Services)
- * @module components/auth/LoginForm
- * @see CODE_SPEC_AANG.md Bagian 8.1 & AC-10.2, AC-10.4
+ * Formulir masuk akun pengguna.
  */
 
 'use client';
@@ -77,7 +73,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="nama@email.com"
+          placeholder="nama@gmail.com"
           className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition"
         />
       </div>
@@ -101,7 +97,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••"
+          placeholder=""
           className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition"
         />
       </div>

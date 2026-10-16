@@ -1,9 +1,5 @@
 /**
- * @file parameters.ts
- * @description Parameter numerik resmi dan konfigurasi default algoritma AANG (PRD Bagian 9.3, PAR-01 s/d PAR-14).
- * @author Person 1 (Core Algorithm & System Integration)
- * @module config/parameters
- * @see CODE_SPEC_AANG.md Bagian 3.5 & PRD Bagian 9.3
+ * Parameter numerik resmi dan konfigurasi default algoritma AANG.
  */
 
 import type { AlgorithmParams } from '@/types/algorithms';

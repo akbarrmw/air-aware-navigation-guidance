@@ -1,7 +1,5 @@
 /**
- * Fetch wrapper dengan timeout (AbortController) dan 1x retry otomatis
- * untuk kegagalan jaringan atau respons status 5xx.
- * Pemilik: Person 2 (Backend Services)
+ * Fetch wrapper dengan dukungan batas waktu (timeout) dan percobaan ulang otomatis.
  */
 
 export interface FetchWithTimeoutOptions extends RequestInit {

@@ -44,3 +44,12 @@ next-env.d.ts
 
 # personal developer checklists
 list_person*.md
+
+# internal specifications, PRD, and agent skills
+CODE_SPEC_AANG.md
+Code_Spec_AANG.md
+PRD_AANG*.md
+SKILL.md
+**/SKILL.md
+p2-api-verification.md
+
