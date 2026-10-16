@@ -98,10 +98,24 @@ export async function fetchWaqiStationsInBounds(
 
   const rawStations: WaqiBoundsItem[] = json.data;
 
-  // Batasi detail panggilan maksimal 5 stasiun untuk menjaga kuota
-  const stationsToEnrich = rawStations.slice(0, 5);
+  // Filter stasiun yang memiliki nama dan koordinat valid di Indonesia (-11.5 s/d 6.5 lat, 94.5 s/d 141.5 lon)
+  const validStations = rawStations.filter(
+    (item) =>
+      item.lat >= -11.5 &&
+      item.lat <= 6.5 &&
+      item.lon >= 94.5 &&
+      item.lon <= 141.5 &&
+      item.station?.name &&
+      item.station.name.trim().length > 0
+  );
 
-  const normalizedList: StationData[] = await Promise.all(
+  const stationsToUse = validStations.length > 0 ? validStations : rawStations;
+
+  // Ambil detail feed untuk 8 stasiun pertama, sisanya gunakan data AQI dari bounds API
+  const stationsToEnrich = stationsToUse.slice(0, 8);
+  const stationsLight = stationsToUse.slice(8, 45);
+
+  const enrichedList: StationData[] = await Promise.all(
     stationsToEnrich.map(async (item) => {
       const aqiNum = item.aqi === '-' ? null : parseInt(item.aqi, 10);
       const feedDetail = await fetchWaqiStationFeed(item.uid, waqiToken);
@@ -120,6 +134,24 @@ export async function fetchWaqiStationsInBounds(
       });
     })
   );
+
+  const lightList: StationData[] = stationsLight.map((item) => {
+    const aqiNum = item.aqi === '-' ? null : parseInt(item.aqi, 10);
+    return normalizeStation({
+      stationId: `waqi-${item.uid}`,
+      stationName: item.station.name,
+      lat: item.lat,
+      lng: item.lon,
+      aqi: isNaN(aqiNum as number) ? null : aqiNum,
+      pm25Concentration: null,
+      pm10Concentration: null,
+      observedAt: item.station?.time || new Date().toISOString(),
+      dataType: 'station_observation',
+      sourceName: 'WAQI (aqicn.org)',
+    });
+  });
+
+  const normalizedList = [...enrichedList, ...lightList];
 
   if (normalizedList.length > 0) {
     appCache.set(cacheKey, normalizedList, 10); // Cache 10 menit

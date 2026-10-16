@@ -1,233 +1,327 @@
 /**
  * @file page.tsx
- * @description Halaman Peta Kualitas Udara Kota P-02 untuk AANG.
- * Menampilkan sebaran stasiun pemantau, panel detail polutan, dan integrasi peta interaktif (TC-33).
+ * @description Halaman Peta Kualitas Udara Interaktif Nasional AANG.
+ * Menampilkan sebaran stasiun pemantau seluruh Indonesia (WAQI & Open-Meteo),
+ * panel pencarian & filter, rincian polutan, dan integrasi rute bersih.
  * 
- * @author Person 3 (Database, Auth, & History Services)
  * @module app/map/page
  * @see CODE_SPEC_AANG.md Bagian 8.1 & FR-02, TC-33
  */
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import {
-  MapPin,
-  Search,
-  AlertTriangle,
-  RotateCw,
-  Info,
-} from 'lucide-react';
-import { useStations } from '@/components/air-map/useStations';
-import { StationDetailPanel } from '@/components/air-map/StationDetailPanel';
-import { AirQualityMap } from '@/components/air-map/AirQualityMap';
+  SearchIcon,
+  CloseIcon,
+  NavigationIcon,
+} from '@/components/common/Icons';
+import type { StationData } from '@/types/air-quality';
+import type { ApiResponse } from '@/types/api';
+import { AQI_CATEGORIES } from '@/types/aqiScale';
+
+// Dynamic import Leaflet NavigationMap untuk mencegah SSR error
+const NavigationMap = dynamic(() => import('@/components/map/NavigationMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs font-semibold text-slate-600">Memuat Peta Pemantauan Udara...</span>
+      </div>
+    </div>
+  ),
+});
 
 export default function AirQualityMapPage() {
-  const {
-    stations,
-    loading,
-    error,
-    selectedStation,
-    setSelectedStation,
-    fetchStations,
-    dataMode,
-  } = useStations();
-
+  const [stations, setStations] = useState<StationData[]>([]);
+  const [selectedStation, setSelectedStation] = useState<StationData | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'list' | 'detail'>('list');
+  const [filterCategory, setFilterCategory] = useState<
+    'all' | 'waqi' | 'openmeteo' | 'good' | 'moderate' | 'unhealthy'
+  >('all');
+  const [loading, setLoading] = useState(true);
+  const [dataMode, setDataMode] = useState<string>('live');
 
-  // Filter stasiun berdasarkan pencarian teks
-  const filteredStations = stations.filter((st) =>
-    st.stationName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Fetch real stations from API (Cakupan Seluruh Indonesia - WAQI + Open-Meteo)
+  useEffect(() => {
+    async function loadStations() {
+      try {
+        const res = await fetch('/api/air-quality/stations?south=-11.0&west=95.0&north=6.0&east=141.0');
+        const json: ApiResponse<StationData[]> = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          setStations(json.data);
+          if (json.meta?.dataMode) {
+            setDataMode(json.meta.dataMode);
+          }
+          if (json.data.length > 0) {
+            setSelectedStation(json.data[0]);
+          }
+        }
+      } catch (err) {
+        console.error('Gagal memuat stasiun:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadStations();
+  }, []);
 
-  const isSimulation = dataMode === 'simulation';
+  // Filter stations based on search query, provider, and category
+  const filteredStations = stations.filter((st) => {
+    const matchesSearch =
+      st.stationName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (st.sourceName || '').toLowerCase().includes(searchQuery.toLowerCase());
+
+    const aqi = st.aqi ?? Math.round((st.pm25Concentration ?? 25) * 2.2);
+
+    let matchesCategory = true;
+    if (filterCategory === 'good') matchesCategory = aqi <= 50;
+    else if (filterCategory === 'moderate') matchesCategory = aqi > 50 && aqi <= 100;
+    else if (filterCategory === 'unhealthy') matchesCategory = aqi > 100;
+    else if (filterCategory === 'waqi') matchesCategory = st.dataType === 'station_observation' || (st.sourceName || '').includes('WAQI');
+    else if (filterCategory === 'openmeteo') matchesCategory = st.dataType === 'model_fallback' || (st.sourceName || '').includes('Open-Meteo');
+
+    return matchesSearch && matchesCategory;
+  });
+
+  // Ambil metadata kategori AQI stasiun terpilih
+  const activeAqi = selectedStation
+    ? selectedStation.aqi ?? Math.round((selectedStation.pm25Concentration ?? 25) * 2.2)
+    : 50;
+  const activeCategory =
+    AQI_CATEGORIES.find((cat) => {
+      if (cat.code === 'good' && activeAqi <= 50) return true;
+      if (cat.code === 'moderate' && activeAqi > 50 && activeAqi <= 100) return true;
+      if (cat.code === 'unhealthySensitive' && activeAqi > 100 && activeAqi <= 150) return true;
+      if (cat.code === 'unhealthy' && activeAqi > 150 && activeAqi <= 200) return true;
+      if (cat.code === 'veryUnhealthy' && activeAqi > 200 && activeAqi <= 300) return true;
+      if (cat.code === 'hazardous' && activeAqi > 300) return true;
+      return false;
+    }) || AQI_CATEGORIES[0];
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] bg-slate-950 text-white overflow-hidden">
+    <div className="relative w-full h-[calc(100vh-56px)] mt-[56px] overflow-hidden bg-slate-100">
       {/* Simulation Banner Notice if active */}
-      {isSimulation && (
-        <div className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-2 text-xs text-amber-300 flex items-center justify-between gap-2 z-30 shrink-0">
-          <div className="flex items-center gap-2">
-            <Info className="w-4 h-4 text-amber-400 shrink-0" />
-            <span>
-              <strong>Mode Simulasi Aktif:</strong> Menampilkan data sintetis stasiun pilot
-              Semarang untuk pengujian reliabilitas & demo juri.
-            </span>
-          </div>
-          <span className="hidden sm:inline-block px-2 py-0.5 rounded bg-amber-500/20 text-[10px] font-bold">
-            DATA_MODE=simulation
-          </span>
+      {dataMode === 'simulation' && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 bg-amber-500/90 backdrop-blur-md text-slate-950 font-bold px-4 py-1.5 rounded-full text-xs shadow-lg border border-amber-300 flex items-center gap-2">
+          <span>⚡ Mode Simulasi Aktif: Menampilkan data stasiun pemantau pengujian.</span>
         </div>
       )}
 
-      {/* Main Split Layout: Sidebar + Interactive Map */}
-      <div className="flex flex-col md:flex-row flex-1 relative overflow-hidden">
-        {/* Left Side Panel: Station List & Detail Panel */}
-        <div className="w-full md:w-[420px] bg-slate-900/95 border-r border-slate-800 flex flex-col z-20 shrink-0 shadow-2xl backdrop-blur-xl max-h-[45vh] md:max-h-full">
-          {/* Header Bar */}
-          <div className="p-4 sm:p-5 border-b border-slate-800/80">
-            <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">
-              <MapPin className="w-4 h-4" />
-              <span>Kota Pilot Semarang</span>
-            </div>
-            <h1 className="text-xl font-black text-white tracking-tight">
-              Peta Kualitas Udara
-            </h1>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Pantau sebaran {stations.length} stasiun pemantau resmi & sensor jaringan kota.
-            </p>
+      {/* 1. Real Leaflet Map */}
+      <div className="w-full h-full absolute inset-0 z-0">
+        <NavigationMap
+          stations={filteredStations}
+          activeStationId={selectedStation?.stationId}
+          onSelectStation={(st) => setSelectedStation(st)}
+          center={selectedStation ? [selectedStation.lat, selectedStation.lng] : [-2.5, 118.0]}
+          zoom={selectedStation ? 11 : 5}
+        />
+      </div>
 
-            {/* Mobile Tab Toggle */}
-            <div className="grid grid-cols-2 p-1 bg-slate-950 rounded-xl mt-3 md:hidden">
-              <button
-                type="button"
-                onClick={() => setActiveTab('list')}
-                className={`py-1.5 text-xs font-bold rounded-lg transition ${
-                  activeTab === 'list'
-                    ? 'bg-emerald-500 text-slate-950'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Daftar ({stations.length})
+      {/* 2. Google Maps Style Floating Search & Station List Panel */}
+      <div className="absolute top-4 left-4 z-20 w-[400px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-5rem)] flex flex-col bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden">
+        {/* Search Bar */}
+        <div className="p-3.5 border-b border-slate-200/80">
+          <div className="flex items-center gap-2 bg-slate-100 hover:bg-slate-100/80 focus-within:bg-white rounded-xl px-3 py-2 border border-slate-200 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 transition">
+            <SearchIcon size={16} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari stasiun atau kota di Indonesia..."
+              className="w-full bg-transparent text-xs text-slate-800 placeholder-slate-400 outline-none font-medium"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="text-slate-400 hover:text-slate-600">
+                <CloseIcon size={14} />
               </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('detail')}
-                className={`py-1.5 text-xs font-bold rounded-lg transition ${
-                  activeTab === 'detail'
-                    ? 'bg-emerald-500 text-slate-950'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Rincian Stasiun
-              </button>
-            </div>
-          </div>
-
-          {/* Search Box */}
-          <div className="p-3 border-b border-slate-800/60 bg-slate-950/40">
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-3" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari nama stasiun atau lokasi..."
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
-              />
-            </div>
-          </div>
-
-          {/* Scrollable Content: List / Detail */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {loading && stations.length === 0 ? (
-              <div className="py-12 text-center text-slate-500 text-xs flex items-center justify-center gap-2">
-                <RotateCw className="w-4 h-4 animate-spin text-emerald-500" />
-                <span>Memuat sebaran stasiun pemantau...</span>
-              </div>
-            ) : error ? (
-              <div className="p-4 bg-rose-950/60 border border-rose-800 rounded-2xl text-rose-300 text-xs flex items-start gap-2.5">
-                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                <div>
-                  <strong className="block font-bold">Gagal Mengambil Data:</strong>
-                  <span>{error}</span>
-                </div>
-              </div>
-            ) : (
-              <>
-                {/* Desktop View: Detail Panel on Top (if selected) + List below, OR Tabbed on mobile */}
-                <div className={`${activeTab === 'detail' ? 'block' : 'hidden md:block'}`}>
-                  {selectedStation && (
-                    <div className="mb-4 pb-4 border-b border-slate-800/80">
-                      <StationDetailPanel station={selectedStation} />
-                    </div>
-                  )}
-                </div>
-
-                <div className={`${activeTab === 'list' ? 'block' : 'hidden md:block'}`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                      Daftar Stasiun Terdeteksi
-                    </span>
-                    <span className="text-[11px] text-slate-500">
-                      {filteredStations.length} stasiun
-                    </span>
-                  </div>
-
-                  {filteredStations.length === 0 ? (
-                    <div className="text-center py-8 text-xs text-slate-500">
-                      Tidak ada stasiun yang cocok dengan pencarian &quot;{searchQuery}&quot;.
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {filteredStations.map((st) => {
-                        const isSelected = selectedStation?.stationId === st.stationId;
-                        return (
-                          <div
-                            key={st.stationId}
-                            onClick={() => {
-                              setSelectedStation(st);
-                              setActiveTab('detail');
-                            }}
-                            className={`p-3.5 rounded-2xl border cursor-pointer transition flex items-center justify-between gap-3 ${
-                              isSelected
-                                ? 'bg-slate-800/90 border-emerald-500 shadow-lg shadow-emerald-500/10'
-                                : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900/60'
-                            }`}
-                          >
-                            <div className="flex-1 min-w-0">
-                              <h4 className="text-xs font-bold text-white truncate">
-                                {st.stationName}
-                              </h4>
-                              <p className="text-[10px] text-slate-400 mt-0.5">
-                                PM2.5:{' '}
-                                <strong className="text-slate-200">
-                                  {st.pm25Concentration !== null
-                                    ? `${st.pm25Concentration.toFixed(1)} µg/m³`
-                                    : 'N/A'}
-                                </strong>{' '}
-                                • {st.sourceName}
-                              </p>
-                            </div>
-
-                            <div className="text-right shrink-0">
-                              <span
-                                className={`inline-block px-2 py-0.5 rounded-lg text-xs font-black ${
-                                  st.aqi && st.aqi <= 50
-                                    ? 'bg-emerald-950 text-emerald-400 border border-emerald-700/60'
-                                    : st.aqi && st.aqi <= 100
-                                    ? 'bg-yellow-950 text-yellow-400 border border-yellow-700/60'
-                                    : 'bg-orange-950 text-orange-400 border border-orange-700/60'
-                                }`}
-                              >
-                                AQI {st.aqi ?? '—'}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </>
             )}
+          </div>
+
+          {/* Filter Chips (Termasuk WAQI & Open-Meteo) */}
+          <div className="flex items-center gap-1.5 mt-2.5 overflow-x-auto pb-1 custom-scrollbar text-[11px]">
+            <button
+              onClick={() => setFilterCategory('all')}
+              className={`px-2.5 py-1 rounded-full font-semibold border transition whitespace-nowrap flex-shrink-0 ${
+                filterCategory === 'all'
+                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                  : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+              }`}
+            >
+              Semua ({stations.length})
+            </button>
+            <button
+              onClick={() => setFilterCategory('waqi')}
+              className={`px-2.5 py-1 rounded-full font-semibold border transition whitespace-nowrap flex-shrink-0 ${
+                filterCategory === 'waqi'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                  : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+              }`}
+            >
+              WAQI Sensor
+            </button>
+            <button
+              onClick={() => setFilterCategory('openmeteo')}
+              className={`px-2.5 py-1 rounded-full font-semibold border transition whitespace-nowrap flex-shrink-0 ${
+                filterCategory === 'openmeteo'
+                  ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                  : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'
+              }`}
+            >
+              Open-Meteo Model
+            </button>
+            <button
+              onClick={() => setFilterCategory('good')}
+              className={`px-2.5 py-1 rounded-full font-semibold border transition whitespace-nowrap flex-shrink-0 ${
+                filterCategory === 'good'
+                  ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm'
+                  : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+              }`}
+            >
+              Baik (≤50)
+            </button>
+            <button
+              onClick={() => setFilterCategory('moderate')}
+              className={`px-2.5 py-1 rounded-full font-semibold border transition whitespace-nowrap flex-shrink-0 ${
+                filterCategory === 'moderate'
+                  ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                  : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+              }`}
+            >
+              Sedang (51-100)
+            </button>
+            <button
+              onClick={() => setFilterCategory('unhealthy')}
+              className={`px-2.5 py-1 rounded-full font-semibold border transition whitespace-nowrap flex-shrink-0 ${
+                filterCategory === 'unhealthy'
+                  ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
+                  : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+              }`}
+            >
+              Tidak Sehat (&gt;100)
+            </button>
           </div>
         </div>
 
-        {/* Right Section: Interactive Leaflet Map Container */}
-        <div className="flex-1 relative h-full">
-          <AirQualityMap
-            stations={stations}
-            selectedStation={selectedStation}
-            onSelectStation={(st) => {
-              setSelectedStation(st);
-              setActiveTab('detail');
-            }}
-            onBoundsChange={(bounds) => {
-              fetchStations(bounds);
-            }}
-          />
+        {/* Station List */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-2 flex flex-col gap-1.5">
+          {filteredStations.length > 0 ? (
+            filteredStations.map((st) => {
+              const aqi = st.aqi ?? Math.round((st.pm25Concentration ?? 25) * 2.2);
+              const isSelected = selectedStation?.stationId === st.stationId;
+              const isModel = st.dataType === 'model_fallback' || (st.sourceName || '').includes('Open-Meteo');
+
+              return (
+                <button
+                  key={st.stationId}
+                  onClick={() => setSelectedStation(st)}
+                  className={`w-full text-left p-3 rounded-xl border transition flex items-center justify-between gap-2 ${
+                    isSelected
+                      ? 'border-emerald-500 bg-emerald-50/70 shadow-sm ring-1 ring-emerald-500/20'
+                      : 'border-slate-100 bg-white hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase tracking-wider ${
+                        isModel ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-blue-100 text-blue-700 border border-blue-200'
+                      }`}>
+                        {isModel ? 'Open-Meteo' : 'WAQI'}
+                      </span>
+                      <strong className="block text-xs font-bold text-slate-800 truncate">
+                        {st.stationName}
+                      </strong>
+                    </div>
+                    <span className="text-[11px] text-slate-500 truncate block">
+                      PM2.5: {(st.pm25Concentration ?? 0).toFixed(1)} µg/m³
+                    </span>
+                  </div>
+
+                  {/* Single Line Stable AQI Badge */}
+                  <span
+                    className="px-2.5 py-1 rounded-full text-white font-bold text-xs shadow-sm flex items-center gap-1 whitespace-nowrap flex-shrink-0"
+                    style={{
+                      backgroundColor:
+                        aqi <= 50 ? '#10b981' : aqi <= 100 ? '#f59e0b' : aqi <= 150 ? '#f97316' : '#ef4444',
+                    }}
+                  >
+                    <span className="opacity-90">AQI</span>
+                    <span>{aqi}</span>
+                  </span>
+                </button>
+              );
+            })
+          ) : (
+            <div className="p-6 text-center text-xs text-slate-400">
+              {loading ? 'Memuat stasiun udara...' : 'Tidak ada stasiun yang cocok dengan filter.'}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 3. Floating Station Detail Card (Google Maps Place Info Style) */}
+      {selectedStation && (
+        <div className="absolute bottom-6 left-4 right-4 md:left-[430px] md:right-auto md:w-96 z-20 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 p-4 transition-all animate-slide-down">
+          <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+            <div className="min-w-0 flex-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                Stasiun Observasi Kualitas Udara
+              </span>
+              <h3 className="text-sm font-bold text-slate-900 leading-tight truncate">
+                {selectedStation.stationName}
+              </h3>
+              <span className="text-xs text-slate-500 block truncate mt-0.5">
+                {selectedStation.sourceName || 'Sumber Terverifikasi'} • Data Terkini
+              </span>
+            </div>
+
+            {/* Single Line Stable AQI Badge in Card Header */}
+            <div
+              className="px-3.5 py-1.5 rounded-xl text-white font-extrabold text-sm flex items-center gap-1.5 shadow-md whitespace-nowrap flex-shrink-0"
+              style={{ backgroundColor: activeCategory.color }}
+            >
+              <span className="text-[10px] uppercase font-bold tracking-wider opacity-90">AQI</span>
+              <span className="text-base font-black">{activeAqi}</span>
+            </div>
+          </div>
+
+          {/* Pollutant Concentrations Grid */}
+          <div className="grid grid-cols-2 gap-2 my-3 text-xs">
+            <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
+              <span className="text-slate-400 block text-[10px] uppercase font-semibold">Konsentrasi PM2.5</span>
+              <strong className="text-sm font-bold text-slate-800">{(selectedStation.pm25Concentration ?? 0).toFixed(1)} <small className="text-[10px]">µg/m³</small></strong>
+            </div>
+            <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
+              <span className="text-slate-400 block text-[10px] uppercase font-semibold">Status Udara</span>
+              <strong className="text-sm font-bold" style={{ color: activeCategory.color }}>{activeCategory.labelId}</strong>
+            </div>
+          </div>
+
+          {/* Direct CTA: Rencanakan Rute ke Stasiun Ini */}
+          <Link
+            href="/routes"
+            className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-sm transition"
+          >
+            <NavigationIcon size={14} />
+            <span>Rencanakan Rute Bersih ke Sini</span>
+          </Link>
+        </div>
+      )}
+
+      {/* 4. Floating AQI Scale Legend (Google Maps Style Bottom Right) */}
+      <div className="hidden lg:flex absolute bottom-6 right-16 z-10 bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-slate-200/80 p-2.5 items-center gap-3 text-xs">
+        <span className="text-slate-500 font-bold text-[11px]">Skala AQI:</span>
+        <div className="flex items-center gap-1.5">
+          {AQI_CATEGORIES.map((cat) => (
+            <div key={cat.code} className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full shadow-xs" style={{ backgroundColor: cat.color }} />
+              <span className="text-[10px] text-slate-600 font-medium">{cat.labelId}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

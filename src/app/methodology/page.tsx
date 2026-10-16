@@ -3,7 +3,7 @@ import Link from 'next/link';
 export default function MethodologyPage() {
   return (
     <div className="py-12 px-4 max-w-4xl mx-auto text-slate-200">
-      <h1 className="text-3xl font-extrabold text-white mb-4">Metodologi & Batasan Sistem EcoPulse</h1>
+      <h1 className="text-3xl font-extrabold text-white mb-4">Metodologi & Batasan Sistem AANG</h1>
       <p className="text-slate-400 mb-8 text-sm">
         Dokumentasi ilmiah ringkas mengenai formulasi perhitungan estimasi paparan, interpolasi spasial, serta batasan klaim kesehatan.
       </p>
@@ -26,7 +26,7 @@ export default function MethodologyPage() {
             </div>
             <div className="p-3 bg-slate-950/60 rounded border border-slate-800">
               <strong className="text-rose-400 block mb-1">Risiko Klinis (Tidak Diklaim)</strong>
-              Dampak kesehatan spesifik individual. EcoPulse tidak mendiagnosis atau memprediksi penyakit.
+              Dampak kesehatan spesifik individual. AANG tidak mendiagnosis atau memprediksi penyakit.
             </div>
           </div>
         </section>

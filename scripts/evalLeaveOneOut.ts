@@ -13,7 +13,7 @@
  * @see CODE_SPEC_AANG.md Bagian 6 (M-05, TC-28) & list_person1.md Tahap 5
  */
 
-import { MOCK_STATIONS } from '../src/fixtures/mockStations';
+import { SEMARANG_PILOT_STATIONS } from '../src/fixtures/mockStations';
 import { idwAtPoint } from '../src/lib/algorithms/interpolation';
 import { haversineMeters } from '../src/lib/algorithms/geoMath';
 import { DEFAULT_ALGORITHM_PARAMS } from '../src/config/parameters';
@@ -58,7 +58,7 @@ export interface LeaveOneOutReport {
  * @returns Laporan komprehensif LeaveOneOutReport
  */
 export function evaluateLeaveOneOut(
-  stations: StationData[] = MOCK_STATIONS,
+  stations: StationData[] = SEMARANG_PILOT_STATIONS,
   params: AlgorithmParams = DEFAULT_ALGORITHM_PARAMS
 ): LeaveOneOutReport {
   // Hanya uji stasiun yang memiliki data konsentrasi PM2.5 terukur valid
