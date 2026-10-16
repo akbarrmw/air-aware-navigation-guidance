@@ -86,15 +86,19 @@ describe('Person 2 - Backend Services & Normalization', () => {
     ];
 
     const candidates = processRouteCandidates(mockRaw);
-    // Rute 3 yang duplikat harus dibuang, menyisakan 2 rute unik
-    expect(candidates.length).toBe(2);
+    // Seluruh rute yang didapat dipertahankan dan diurutkan berdasarkan durasi (A tercepat)
+    expect(candidates.length).toBe(3);
     expect(candidates[0].isFastest).toBe(true);
     expect(candidates[0].label).toBe('A');
     expect(candidates[0].durationSeconds).toBe(700);
 
     expect(candidates[1].isFastest).toBe(false);
     expect(candidates[1].label).toBe('B');
-    expect(candidates[1].durationSeconds).toBe(900);
+    expect(candidates[1].durationSeconds).toBe(710);
+
+    expect(candidates[2].isFastest).toBe(false);
+    expect(candidates[2].label).toBe('C');
+    expect(candidates[2].durationSeconds).toBe(900);
   });
 
   it('TC-16: Validasi batasan area pilot (Semarang BBox)', () => {
