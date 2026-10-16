@@ -97,14 +97,16 @@ export function routeHasToll(route: {
 
 /**
  * Mencari rute alternatif yang realistis dengan pengaman (Guarded Diversification)
- * Mendukung penghindaran jalan tol secara otomatis jika diminta (mustAvoidToll = true).
+ * Mendukung penghindaran jalan tol secara otomatis jika diminta (mustAvoidToll = true)
+ * serta adaptasi toleransi waktu/jarak untuk rute tol vs arteri pada seluruh moda transportasi.
  */
 async function fetchGuardedAlternativeRoute(
   origin: RoutePoint,
   destination: RoutePoint,
   primaryRoute: RawRouteInput,
   directDistance: number,
-  mustAvoidToll: boolean = false
+  mustAvoidToll: boolean = false,
+  primaryHasToll: boolean = false
 ): Promise<RawRouteInput | null> {
   // Hanya aktif untuk perjalanan perkotaan / sub-urban (1.5 km s/d 60 km)
   if (directDistance < 1500 || directDistance > 60000) {
@@ -124,10 +126,8 @@ async function fetchGuardedAlternativeRoute(
   const midLat = (origin.lat + destination.lat) / 2;
   const midLng = (origin.lng + destination.lng) / 2;
 
-  // Coba titik perantara di dua sisi koridor dengan variasi jarak offset
-  const multiplierList = mustAvoidToll
-    ? [-1, 1, -1.8, 1.8, -3.0, 3.0]
-    : [-1, 1, -1.8, 1.8];
+  // Coba titik perantara di dua sisi koridor dengan variasi jarak offset yang adaptif untuk seluruh moda
+  const multiplierList = [-1, 1, -1.8, 1.8, -2.8, 2.8, -0.6, 0.6];
 
   const viaCandidates = multiplierList.map((m) => ({
     lat: midLat + normLat * (baseOffset * m),
@@ -143,19 +143,26 @@ async function fetchGuardedAlternativeRoute(
       const data: OsrmRouteResponse = await res.json();
       if (data.code === 'Ok' && Array.isArray(data.routes) && data.routes.length > 0) {
         const alt = data.routes[0];
+        const altHasToll = routeHasToll(alt);
 
         // Jika mode melarang jalan tol, pastikan rute alternatif benar-benar bebas tol
-        if (mustAvoidToll && routeHasToll(alt)) {
+        if (mustAvoidToll && altHasToll) {
           continue;
         }
 
-        // Toleransi guardrails: jika rute utama memakai tol, rute arteri non-tol wajar memakan waktu/jarak lebih lama
-        const maxTimeMultiplier = mustAvoidToll ? 2.5 : 1.35;
-        const maxDistMultiplier = mustAvoidToll ? 2.2 : 1.40;
+        // Toleransi guardrails:
+        // Jika rute utama memakai jalan tol atau moda harus menghindari tol, rute arteri non-tol wajar memakan waktu/jarak lebih lama (hingga 2.5x)
+        // Untuk koridor non-tol perkotaan, toleransi waktu hingga 1.65x (sesuai toleransi ekstra waktu di slider UI)
+        const isTollDivergence = mustAvoidToll || primaryHasToll;
+        const maxTimeMultiplier = isTollDivergence ? 2.5 : 1.65;
+        const maxDistMultiplier = isTollDivergence ? 2.2 : 1.60;
 
         const isTimeAcceptable = alt.duration <= primaryRoute.durationSeconds * maxTimeMultiplier;
         const isDistAcceptable = alt.distance <= primaryRoute.distanceMeters * maxDistMultiplier;
-        const isDistinct = mustAvoidToll || Math.abs(alt.duration - primaryRoute.durationSeconds) >= 20;
+        const isDistinct =
+          primaryHasToll !== altHasToll ||
+          Math.abs(alt.duration - primaryRoute.durationSeconds) >= 15 ||
+          Math.abs(alt.distance - primaryRoute.distanceMeters) >= 150;
 
         if (isTimeAcceptable && isDistAcceptable && isDistinct) {
           return {
@@ -250,6 +257,7 @@ export async function getRouteAlternatives(
             destination,
             tollPrimaryRaw,
             directDistance,
+            true,
             true
           );
 
@@ -277,6 +285,7 @@ export async function getRouteAlternatives(
           // Jika hanya ada 1 rute tunggal, cari alternatif diversifikasi tambahan
           if (rawRoutes.length === 1) {
             const primaryOsrm = validOsrmRoutes[0];
+            const primaryHasToll = routeHasToll(primaryOsrm);
             const guardedAlt = await fetchGuardedAlternativeRoute(
               origin,
               destination,
@@ -286,7 +295,8 @@ export async function getRouteAlternatives(
                 coordinates: rawRoutes[0].coordinates,
               },
               directDistance,
-              mustAvoidToll
+              mustAvoidToll,
+              primaryHasToll
             );
 
             if (guardedAlt) {
