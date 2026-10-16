@@ -789,7 +789,7 @@ function RoutePlannerContent() {
             {/* Input Fields Column */}
             <div className="flex-1 flex flex-col gap-2 relative">
               {/* Origin Input */}
-              <div className="relative">
+              <div className={`relative ${activeDropdown === 'origin' ? 'z-40' : 'z-10'}`}>
                 <input
                   ref={originInputRef}
                   type="text"
@@ -861,7 +861,7 @@ function RoutePlannerContent() {
                           key={idx}
                           type="button"
                           onClick={() => handleSelectOrigin(item)}
-                          className="w-full text-left px-3.5 py-2.5 text-xs hover:bg-slate-50 border-b border-slate-100 last:border-none flex items-start gap-2.5 text-slate-700 transition"
+                          className="w-full text-left px-3.5 py-2.5 text-xs bg-white hover:bg-slate-50 border-b border-slate-100 last:border-none flex items-start gap-2.5 text-slate-700 transition"
                         >
                           <MapPin className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
                           <div className="min-w-0 flex-1">
@@ -879,7 +879,12 @@ function RoutePlannerContent() {
 
               {/* Waypoints Input Rows (Titik Singgah) */}
               {waypoints.map((wp, index) => (
-                <div key={wp.id} className="relative flex items-center gap-1.5 animate-slide-down">
+                <div
+                  key={wp.id}
+                  className={`relative flex items-center gap-1.5 ${
+                    activeDropdown === `waypoint-${wp.id}` ? 'z-40' : 'z-10'
+                  }`}
+                >
                   <div className="relative flex-1">
                     <input
                       type="text"
@@ -907,7 +912,7 @@ function RoutePlannerContent() {
                               key={idx}
                               type="button"
                               onClick={() => handleSelectWaypoint(wp.id, item)}
-                              className="w-full text-left px-3.5 py-2.5 text-xs hover:bg-blue-50 border-b border-slate-100 last:border-none flex items-start gap-2.5 text-slate-700 transition"
+                              className="w-full text-left px-3.5 py-2.5 text-xs bg-white hover:bg-blue-50 border-b border-slate-100 last:border-none flex items-start gap-2.5 text-slate-700 transition"
                             >
                               <MapPin className="w-3.5 h-3.5 text-blue-600 mt-0.5 shrink-0" />
                               <div className="min-w-0 flex-1">
@@ -937,7 +942,7 @@ function RoutePlannerContent() {
               ))}
 
               {/* Destination Input */}
-              <div className="relative">
+              <div className={`relative ${activeDropdown === 'destination' ? 'z-40' : 'z-10'}`}>
                 <input
                   ref={destInputRef}
                   type="text"
@@ -968,7 +973,7 @@ function RoutePlannerContent() {
                           key={idx}
                           type="button"
                           onClick={() => handleSelectDest(item)}
-                          className="w-full text-left px-3.5 py-2.5 text-xs hover:bg-emerald-50 border-b border-slate-100 last:border-none flex items-start gap-2.5 text-slate-700 transition"
+                          className="w-full text-left px-3.5 py-2.5 text-xs bg-white hover:bg-emerald-50 border-b border-slate-100 last:border-none flex items-start gap-2.5 text-slate-700 transition"
                         >
                           <MapPin className="w-3.5 h-3.5 text-rose-500 mt-0.5 shrink-0" />
                           <div className="min-w-0 flex-1">
@@ -1011,7 +1016,7 @@ function RoutePlannerContent() {
           </div>
 
           {/* Optimization Preferences Slider (5 Posisi Diskrit: 0, 25, 50, 75, 100) */}
-          <div className="mt-3 pt-3 border-t border-slate-100">
+          <div className="mt-3 pt-3 border-t border-slate-100 relative z-0">
             <div className="flex items-center justify-between text-xs mb-1.5">
               <span className="text-slate-600 font-medium">Prioritas Optimasi:</span>
               <span className="font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200/80 text-[11px]">
