@@ -17,7 +17,7 @@ import type { AnalyzeRoutesResponseData } from '@/types/analyze';
  */
 export const POST = withApiHandler<AnalyzeRoutesResponseData, AnalyzeRoutesRequestInput>(
   async ({ body }) => {
-    const { origin, destination, waypoints, preferences } = body;
+    const { origin, destination, waypoints, preferences, transportMode } = body;
 
     const result = await runAnalysisPipeline({
       origin: { lat: origin.lat, lng: origin.lng },
@@ -27,6 +27,7 @@ export const POST = withApiHandler<AnalyzeRoutesResponseData, AnalyzeRoutesReque
         exposureWeight: preferences.exposureWeight,
         maxExtraTimePercent: preferences.maxExtraTimePercent,
       },
+      transportMode: transportMode || 'car',
     });
 
     return result;
