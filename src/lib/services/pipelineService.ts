@@ -24,6 +24,7 @@ import { DEFAULT_ALGORITHM_PARAMS } from '@/config/parameters';
 export interface AnalyzePipelineInput {
   origin: { lat: number; lng: number };
   destination: { lat: number; lng: number };
+  waypoints?: Array<{ lat: number; lng: number; label?: string }>;
   preferences: RoutePreferences;
   routes?: RouteCandidate[];
   stations?: StationData[];
@@ -83,10 +84,10 @@ export async function runAnalysisPipeline(
     });
   }
 
-  // 2. Dapatkan alternatif rute riil (OSRM Live dengan titik asal & tujuan sebenarnya)
+  // 2. Dapatkan alternatif rute riil (OSRM Live dengan titik asal, waypoints, & tujuan sebenarnya)
   const candidateRoutes =
     input.routes ||
-    (await getRouteAlternatives(input.origin, input.destination));
+    (await getRouteAlternatives(input.origin, input.destination, input.waypoints));
 
   // 3. Dapatkan data stasiun udara di sekitar koridor rute sebenarnya
   let stations = input.stations;

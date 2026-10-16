@@ -58,11 +58,12 @@ interface OsrmRouteResponse {
  */
 export async function getRouteAlternatives(
   origin: RoutePoint,
-  destination: RoutePoint
+  destination: RoutePoint,
+  waypoints: RoutePoint[] = []
 ): Promise<RouteCandidate[]> {
   // 1. Validasi jarak minimum 100 meter
   const directDistance = getApproxDistanceMeters(origin, destination);
-  if (directDistance < 100) {
+  if (directDistance < 100 && waypoints.length === 0) {
     throw new RoutingServiceError(
       'Jarak antara titik asal dan tujuan terlalu dekat (minimal 100 meter).',
       'VALIDATION_ERROR',
@@ -70,8 +71,9 @@ export async function getRouteAlternatives(
     );
   }
 
-  // 2. Cache check berdasarkan koordinat dibulatkan (4 desimal ~ 11 meter)
-  const cacheKey = `osrm_${origin.lat.toFixed(4)}_${origin.lng.toFixed(4)}_${destination.lat.toFixed(4)}_${destination.lng.toFixed(4)}`;
+  // 2. Cache check berdasarkan seluruh koordinat rute
+  const allPoints = [origin, ...waypoints, destination];
+  const cacheKey = `osrm_${allPoints.map((p) => `${p.lat.toFixed(4)}_${p.lng.toFixed(4)}`).join('_')}`;
   const cached = appCache.get<RouteCandidate[]>(cacheKey);
   if (cached) {
     return cached;
@@ -79,7 +81,8 @@ export async function getRouteAlternatives(
 
   // 3. Selalu coba memanggil OSRM nyata terlebih dahulu
   try {
-    const url = `${CONSTANTS.DEFAULT_ROUTING_URL}/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson&alternatives=true`;
+    const coordString = allPoints.map((p) => `${p.lng},${p.lat}`).join(';');
+    const url = `${CONSTANTS.DEFAULT_ROUTING_URL}/route/v1/driving/${coordString}?overview=full&geometries=geojson&alternatives=true`;
 
     const res = await fetchWithTimeout(url, {
       timeoutMs: ECOPULSE_PARAMS.PAR_13_TIMEOUT_ROUTING_MS,
@@ -112,11 +115,10 @@ export async function getRouteAlternatives(
   // 4. Fallback jika OSRM tidak dapat dihubungi dan mode simulasi aktif
   const isSimulation = process.env.DATA_MODE === 'simulation';
   if (isSimulation) {
-    // Generate rute adaptif yang menghubungkan origin dan destination secara nyata jika OSRM offline
+    // Generate rute adaptif yang menghubungkan origin, waypoints, dan destination secara nyata jika OSRM offline
     const fallbackCoords: [number, number][] = [
       [origin.lat, origin.lng],
-      [(origin.lat * 2 + destination.lat) / 3, (origin.lng * 2 + destination.lng) / 3],
-      [(origin.lat + destination.lat * 2) / 3, (origin.lng + destination.lng * 2) / 3],
+      ...waypoints.map((w) => [w.lat, w.lng] as [number, number]),
       [destination.lat, destination.lng],
     ];
 

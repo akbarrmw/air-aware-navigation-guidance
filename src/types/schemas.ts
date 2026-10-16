@@ -98,6 +98,7 @@ export type RoutePreferencesInput = z.infer<typeof RoutePreferencesSchema>;
 export const AnalyzeRoutesRequestSchema = z.object({
   origin: LocationPointSchema,
   destination: LocationPointSchema,
+  waypoints: z.array(LocationPointSchema).max(5, 'Maksimal 5 titik singgah').optional(),
   preferences: RoutePreferencesSchema.default({
     exposureWeight: 0.5,
     maxExtraTimePercent: 30,
