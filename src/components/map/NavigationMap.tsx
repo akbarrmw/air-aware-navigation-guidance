@@ -9,6 +9,7 @@ import { AQI_CATEGORIES } from '@/types/aqiScale';
 interface NavigationMapProps {
   origin?: { lat: number; lng: number; label?: string } | null;
   destination?: { lat: number; lng: number; label?: string } | null;
+  waypoints?: Array<{ lat: number; lng: number; label?: string }>;
   routes?: AnalyzedRoute[];
   selectedRouteLabel?: RouteLabel | null;
   onSelectRoute?: (label: RouteLabel) => void;
@@ -22,6 +23,7 @@ interface NavigationMapProps {
 export default function NavigationMap({
   origin,
   destination,
+  waypoints = [],
   routes = [],
   selectedRouteLabel,
   onSelectRoute,
@@ -167,7 +169,7 @@ export default function NavigationMap({
     });
   }, [routes, selectedRouteLabel, onSelectRoute]);
 
-  // 3. Render Marker Titik Asal & Destinasi
+  // 3. Render Marker Titik Asal, Waypoints, & Destinasi
   useEffect(() => {
     const map = mapInstanceRef.current;
     const markerGroup = layersRef.current?.markerLayerGroup;
@@ -178,6 +180,7 @@ export default function NavigationMap({
     import('leaflet').then((L) => {
       let originPt: [number, number] | null = null;
       let destPt: [number, number] | null = null;
+      const waypointPts: [number, number][] = [];
 
       // Marker Asal (A - Hijau)
       if (origin && typeof origin.lat === 'number' && typeof origin.lng === 'number') {
@@ -196,6 +199,29 @@ export default function NavigationMap({
         const originMarker = L.marker([origin.lat, origin.lng], { icon: originIcon });
         originMarker.bindPopup(`<strong>Titik Keberangkatan</strong><br/>${origin.label || 'Titik Awal'}`);
         markerGroup.addLayer(originMarker);
+      }
+
+      // Marker Titik Singgah / Waypoints (1, 2, 3... - Biru Indigo)
+      if (Array.isArray(waypoints)) {
+        waypoints.forEach((wp, index) => {
+          if (wp && typeof wp.lat === 'number' && typeof wp.lng === 'number') {
+            waypointPts.push([wp.lat, wp.lng]);
+            const wpIcon = L.divIcon({
+              className: 'custom-div-icon',
+              html: `
+                <div style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#3b82f6;color:#ffffff;font-weight:bold;font-size:12px;border:3px solid #ffffff;box-shadow:0 4px 10px rgba(59,130,246,0.5);cursor:pointer;">
+                  ${index + 1}
+                </div>
+              `,
+              iconSize: [28, 28],
+              iconAnchor: [14, 14],
+            });
+
+            const wpMarker = L.marker([wp.lat, wp.lng], { icon: wpIcon });
+            wpMarker.bindPopup(`<strong>Titik Singgah ${index + 1}</strong><br/>${wp.label || 'Waypoint'}`);
+            markerGroup.addLayer(wpMarker);
+          }
+        });
       }
 
       // Marker Tujuan (B - Merah Google Maps)
@@ -219,20 +245,23 @@ export default function NavigationMap({
 
       // Auto zoom & center ke titik yang baru dipilih jika rute belum digambar
       if (!routes || routes.length === 0) {
-        if (originPt && destPt) {
-          map.fitBounds([originPt, destPt], {
+        const allPts: [number, number][] = [];
+        if (originPt) allPts.push(originPt);
+        allPts.push(...waypointPts);
+        if (destPt) allPts.push(destPt);
+
+        if (allPts.length >= 2) {
+          map.fitBounds(allPts, {
             paddingTopLeft: [420, 60],
             paddingBottomRight: [60, 60],
             maxZoom: 14,
           });
-        } else if (originPt) {
-          map.flyTo(originPt, 14, { duration: 1.2 });
-        } else if (destPt) {
-          map.flyTo(destPt, 14, { duration: 1.2 });
+        } else if (allPts.length === 1) {
+          map.flyTo(allPts[0], 14, { duration: 1.2 });
         }
       }
     });
-  }, [origin, destination, routes]);
+  }, [origin, destination, waypoints, routes]);
 
   // 4. Render Stasiun Kualitas Udara (AQI Radar Pins)
   useEffect(() => {
