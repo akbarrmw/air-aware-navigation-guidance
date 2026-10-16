@@ -1,3 +1,13 @@
+/**
+ * @file page.tsx
+ * @description Halaman Peta Kualitas Udara Interaktif Nasional AANG.
+ * Menampilkan sebaran stasiun pemantau seluruh Indonesia (WAQI & Open-Meteo),
+ * panel pencarian & filter, rincian polutan, dan integrasi rute bersih.
+ * 
+ * @module app/map/page
+ * @see CODE_SPEC_AANG.md Bagian 8.1 & FR-02, TC-33
+ */
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -33,6 +43,7 @@ export default function AirQualityMapPage() {
     'all' | 'waqi' | 'openmeteo' | 'good' | 'moderate' | 'unhealthy'
   >('all');
   const [loading, setLoading] = useState(true);
+  const [dataMode, setDataMode] = useState<string>('live');
 
   // Fetch real stations from API (Cakupan Seluruh Indonesia - WAQI + Open-Meteo)
   useEffect(() => {
@@ -42,6 +53,9 @@ export default function AirQualityMapPage() {
         const json: ApiResponse<StationData[]> = await res.json();
         if (json.success && Array.isArray(json.data)) {
           setStations(json.data);
+          if (json.meta?.dataMode) {
+            setDataMode(json.meta.dataMode);
+          }
           if (json.data.length > 0) {
             setSelectedStation(json.data[0]);
           }
@@ -90,6 +104,13 @@ export default function AirQualityMapPage() {
 
   return (
     <div className="relative w-full h-[calc(100vh-56px)] mt-[56px] overflow-hidden bg-slate-100">
+      {/* Simulation Banner Notice if active */}
+      {dataMode === 'simulation' && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 bg-amber-500/90 backdrop-blur-md text-slate-950 font-bold px-4 py-1.5 rounded-full text-xs shadow-lg border border-amber-300 flex items-center gap-2">
+          <span>⚡ Mode Simulasi Aktif: Menampilkan data stasiun pemantau pengujian.</span>
+        </div>
+      )}
+
       {/* 1. Real Leaflet Map */}
       <div className="w-full h-full absolute inset-0 z-0">
         <NavigationMap
