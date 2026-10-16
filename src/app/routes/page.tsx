@@ -24,6 +24,7 @@ import {
   Check,
   LocateFixed,
   RotateCw,
+  Navigation,
 } from 'lucide-react';
 import type { ApiResponse } from '@/types/api';
 import type { AnalyzeRoutesResponseData } from '@/types/analyze';
@@ -766,8 +767,8 @@ function RoutePlannerContent() {
           <div className="flex items-start gap-3">
             {/* Visual Indicators & Connector Column */}
             <div className="flex flex-col items-center pt-2 select-none">
-              <span className="w-4 h-4 rounded-full border-2 border-emerald-500 bg-white flex items-center justify-center text-[9px] font-bold text-emerald-700 shadow-xs" title="Titik Keberangkatan">
-                A
+              <span className="w-5 h-5 rounded-full border-2 border-emerald-500 bg-emerald-50 text-emerald-700 flex items-center justify-center shadow-xs" title="Titik Keberangkatan">
+                <Navigation className="w-2.5 h-2.5 fill-emerald-600 text-emerald-600" />
               </span>
               <span className="w-0.5 h-6 bg-slate-300 border-dashed my-1" />
 
@@ -780,8 +781,8 @@ function RoutePlannerContent() {
                 </React.Fragment>
               ))}
 
-              <span className="w-4 h-4 rounded-full bg-rose-500 text-white flex items-center justify-center text-[9px] font-bold shadow-xs" title="Titik Tujuan">
-                B
+              <span className="w-5 h-5 flex items-center justify-center text-rose-500" title="Titik Tujuan">
+                <MapPin className="w-4 h-4 text-rose-500 fill-rose-500" />
               </span>
             </div>
 

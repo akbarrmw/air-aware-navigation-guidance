@@ -182,14 +182,16 @@ export default function NavigationMap({
       let destPt: [number, number] | null = null;
       const waypointPts: [number, number][] = [];
 
-      // Marker Asal (A - Hijau)
+      // Marker Asal (Lingkaran Hijau dengan icon GPS / rute)
       if (origin && typeof origin.lat === 'number' && typeof origin.lng === 'number') {
         originPt = [origin.lat, origin.lng];
         const originIcon = L.divIcon({
           className: 'custom-div-icon',
           html: `
-            <div style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#10b981;color:#ffffff;font-weight:bold;font-size:13px;border:3px solid #ffffff;box-shadow:0 4px 12px rgba(16,185,129,0.5);cursor:pointer;">
-              A
+            <div style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#10b981;color:#ffffff;border:3px solid #ffffff;box-shadow:0 4px 12px rgba(16,185,129,0.5);cursor:pointer;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+              </svg>
             </div>
           `,
           iconSize: [32, 32],
@@ -227,14 +229,17 @@ export default function NavigationMap({
         });
       }
 
-      // Marker Tujuan (B - Merah Google Maps)
+      // Marker Tujuan (Merah dengan icon MapPin Lokasi)
       if (destination && typeof destination.lat === 'number' && typeof destination.lng === 'number') {
         destPt = [destination.lat, destination.lng];
         const destIcon = L.divIcon({
           className: 'custom-div-icon',
           html: `
-            <div style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#ef4444;color:#ffffff;font-weight:bold;font-size:13px;border:3px solid #ffffff;box-shadow:0 4px 12px rgba(239,68,68,0.5);cursor:pointer;">
-              B
+            <div style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#ef4444;color:#ffffff;border:3px solid #ffffff;box-shadow:0 4px 12px rgba(239,68,68,0.5);cursor:pointer;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                <circle cx="12" cy="10" r="3" fill="#ef4444"/>
+              </svg>
             </div>
           `,
           iconSize: [32, 32],
