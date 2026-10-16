@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import './globals.css';
+import { Suspense } from 'react';
 import { UserNav } from '@/components/common/UserNav';
 import { Navbar } from '@/components/common/Navbar';
 
@@ -48,7 +49,9 @@ export default function RootLayout({
             </Link>
 
             {/* Dynamic Active Navbar with Elevation Shadow */}
-            <Navbar />
+            <Suspense fallback={<div className="hidden md:flex h-9 w-64 bg-slate-100 rounded-2xl" />}>
+              <Navbar />
+            </Suspense>
 
             <div className="flex items-center gap-3">
               <div className="live-badge hidden sm:flex">
