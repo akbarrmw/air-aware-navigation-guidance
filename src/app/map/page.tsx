@@ -18,6 +18,7 @@ import {
   CloseIcon,
   NavigationIcon,
 } from '@/components/common/Icons';
+import { Zap } from 'lucide-react';
 import type { StationData } from '@/types/air-quality';
 import type { ApiResponse } from '@/types/api';
 import { AQI_CATEGORIES } from '@/types/aqiScale';
@@ -107,7 +108,8 @@ export default function AirQualityMapPage() {
       {/* Simulation Banner Notice if active */}
       {dataMode === 'simulation' && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 bg-amber-500/90 backdrop-blur-md text-slate-950 font-bold px-4 py-1.5 rounded-full text-xs shadow-lg border border-amber-300 flex items-center gap-2">
-          <span>⚡ Mode Simulasi Aktif: Menampilkan data stasiun pemantau pengujian.</span>
+          <Zap className="w-3.5 h-3.5 fill-current shrink-0" />
+          <span>Mode Simulasi Aktif: Menampilkan data stasiun pemantau pengujian.</span>
         </div>
       )}
 

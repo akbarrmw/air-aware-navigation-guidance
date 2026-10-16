@@ -11,6 +11,18 @@ import {
   LeafLogo,
   PlusIcon,
 } from '@/components/common/Icons';
+import {
+  Car,
+  Bike,
+  Footprints,
+  MapPin,
+  Timer,
+  Leaf,
+  Radio,
+  ShieldCheck,
+  ExternalLink,
+  Check,
+} from 'lucide-react';
 import type { ApiResponse } from '@/types/api';
 import type { AnalyzeRoutesResponseData } from '@/types/analyze';
 import type { RouteLabel } from '@/types/common';
@@ -666,7 +678,7 @@ function RoutePlannerContent() {
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <span>🚗</span>
+            <Car className="w-3.5 h-3.5 shrink-0" />
             <span>Mobil</span>
           </button>
           <button
@@ -677,7 +689,7 @@ function RoutePlannerContent() {
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <span>🛵</span>
+            <Bike className="w-3.5 h-3.5 shrink-0" />
             <span>Motor</span>
           </button>
           <button
@@ -688,7 +700,7 @@ function RoutePlannerContent() {
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <span>🚶</span>
+            <Footprints className="w-3.5 h-3.5 shrink-0" />
             <span>Pejalan</span>
           </button>
         </div>
@@ -753,7 +765,7 @@ function RoutePlannerContent() {
                           onClick={() => handleSelectOrigin(item)}
                           className="w-full text-left px-3.5 py-2.5 text-xs hover:bg-emerald-50 border-b border-slate-100 last:border-none flex items-start gap-2.5 text-slate-700 transition"
                         >
-                          <span className="text-emerald-600 mt-0.5 text-xs">📍</span>
+                          <MapPin className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
                           <div className="min-w-0 flex-1">
                             <strong className="block text-slate-900 font-semibold truncate">{title}</strong>
                             {subtitle && (
@@ -799,7 +811,7 @@ function RoutePlannerContent() {
                               onClick={() => handleSelectWaypoint(wp.id, item)}
                               className="w-full text-left px-3.5 py-2.5 text-xs hover:bg-blue-50 border-b border-slate-100 last:border-none flex items-start gap-2.5 text-slate-700 transition"
                             >
-                              <span className="text-blue-600 mt-0.5 text-xs">📍</span>
+                              <MapPin className="w-3.5 h-3.5 text-blue-600 mt-0.5 shrink-0" />
                               <div className="min-w-0 flex-1">
                                 <strong className="block text-slate-900 font-semibold truncate">{title}</strong>
                                 {subtitle && (
@@ -860,7 +872,7 @@ function RoutePlannerContent() {
                           onClick={() => handleSelectDest(item)}
                           className="w-full text-left px-3.5 py-2.5 text-xs hover:bg-emerald-50 border-b border-slate-100 last:border-none flex items-start gap-2.5 text-slate-700 transition"
                         >
-                          <span className="text-rose-500 mt-0.5 text-xs">📍</span>
+                          <MapPin className="w-3.5 h-3.5 text-rose-500 mt-0.5 shrink-0" />
                           <div className="min-w-0 flex-1">
                             <strong className="block text-slate-900 font-semibold truncate">{title}</strong>
                             {subtitle && (
@@ -985,9 +997,15 @@ function RoutePlannerContent() {
               </div>
             </div>
 
-            <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-              <span>⏱️ Prioritas Waktu</span>
-              <span>🍃 Prioritas Udara Bersih</span>
+            <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+              <span className="inline-flex items-center gap-1">
+                <Timer className="w-3 h-3 text-slate-400" />
+                <span>Prioritas Waktu</span>
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Leaf className="w-3 h-3 text-emerald-600" />
+                <span>Prioritas Udara Bersih</span>
+              </span>
             </div>
           </div>
 
@@ -1108,8 +1126,9 @@ function RoutePlannerContent() {
                         </span>
                       )}
                       {stationsCount > 0 && (
-                        <span className="text-slate-500 text-[11px] bg-slate-100 px-1.5 py-0.5 rounded whitespace-nowrap ml-auto">
-                          📡 {stationsCount} stasiun dilalui
+                        <span className="inline-flex items-center gap-1 text-slate-500 text-[11px] bg-slate-100 px-1.5 py-0.5 rounded whitespace-nowrap ml-auto">
+                          <Radio className="w-3 h-3 text-slate-500 shrink-0" />
+                          <span>{stationsCount} stasiun dilalui</span>
                         </span>
                       )}
                     </div>
@@ -1182,7 +1201,7 @@ function RoutePlannerContent() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
-                  <span>📡</span>
+                  <Radio className="w-3.5 h-3.5 text-slate-600 shrink-0" />
                   <span>Stasiun Terdekat yang Dilalui (Rute {activeRoute.label})</span>
                 </div>
                 <span className="text-[11px] text-slate-500 font-medium">
@@ -1250,8 +1269,9 @@ function RoutePlannerContent() {
 
           {/* Actionable Health Mitigation Tips */}
           <div className="pt-2 border-t border-slate-100">
-            <span className="text-[11px] font-bold text-slate-600 block mb-1.5">
-              🛡️ Panduan Mitigasi Kesehatan
+            <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5 mb-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Panduan Mitigasi Kesehatan</span>
             </span>
             <div className="grid grid-cols-1 gap-2 text-xs">
               {(result?.actionMessages || [
@@ -1267,7 +1287,7 @@ function RoutePlannerContent() {
                 },
               ]).map((msg) => (
                 <div key={msg.ruleId} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
-                  <span className="text-emerald-600 mt-0.5">🛡️</span>
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
                   <div>
                     <strong className="block text-slate-800 font-semibold">{msg.message}</strong>
                     <span className="text-[11px] text-slate-500">{msg.basis}</span>
@@ -1293,7 +1313,8 @@ function RoutePlannerContent() {
               className="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition shadow-sm"
             >
               <NavigationIcon size={14} />
-              <span>Buka Petunjuk di Google Maps ↗</span>
+              <span>Buka Petunjuk di Google Maps</span>
+              <ExternalLink className="w-3.5 h-3.5" />
             </button>
 
             <button
@@ -1306,14 +1327,22 @@ function RoutePlannerContent() {
                   : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-60'
               }`}
             >
-              <HistoryIcon size={14} />
-              <span>
-                {savingTrip
-                  ? 'Menyimpan...'
-                  : savedTrip
-                  ? 'Tersimpan di Riwayat ✓'
-                  : 'Simpan Perjalanan'}
-              </span>
+              {savingTrip ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                  <span>Menyimpan...</span>
+                </>
+              ) : savedTrip ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Tersimpan di Riwayat</span>
+                </>
+              ) : (
+                <>
+                  <HistoryIcon size={14} />
+                  <span>Simpan Perjalanan</span>
+                </>
+              )}
             </button>
             {saveTripError && (
               <span className="text-[11px] text-rose-500 text-center font-medium block">
