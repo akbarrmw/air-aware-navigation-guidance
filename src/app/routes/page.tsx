@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import dynamic from 'next/dynamic';
+import { useSearchParams } from 'next/navigation';
 import {
   ClockIcon,
   CloseIcon,
@@ -32,10 +33,11 @@ const NavigationMap = dynamic(() => import('@/components/map/NavigationMap'), {
 
 // Shortcut titik populer di berbagai kota Indonesia untuk kemudahan navigasi 1-klik
 const POPULAR_LOCATIONS = [
+  { label: 'Semarang (Undip Tembalang)', lat: -7.0515, lng: 110.4395 },
+  { label: 'Semarang (Simpang Lima)', lat: -6.9928, lng: 110.4222 },
   { label: 'Jakarta (Monas)', lat: -6.1754, lng: 106.8272 },
   { label: 'Jakarta (Bundaran HI)', lat: -6.1950, lng: 106.8230 },
   { label: 'Bandung (Gedung Sate)', lat: -6.9025, lng: 107.6186 },
-  { label: 'Semarang (Simpang Lima)', lat: -6.9928, lng: 110.4222 },
   { label: 'Yogyakarta (Malioboro)', lat: -7.7926, lng: 110.3658 },
   { label: 'Surabaya (Tugu Pahlawan)', lat: -7.2458, lng: 112.7378 },
   { label: 'Bali (Kuta)', lat: -8.7185, lng: 115.1686 },
@@ -43,12 +45,21 @@ const POPULAR_LOCATIONS = [
   { label: 'IKN Nusantara', lat: -0.9634, lng: 116.7088 },
 ];
 
-export default function RoutePlannerPage() {
-  // Input State
-  const [originInput, setOriginInput] = useState('Simpang Lima, Semarang');
-  const [destInput, setDestInput] = useState('Kampus Undip Tembalang, Semarang');
-  const [originCoord, setOriginCoord] = useState({ lat: -6.9928, lng: 110.4222 });
-  const [destCoord, setDestCoord] = useState({ lat: -7.0514, lng: 110.4388 });
+function RoutePlannerContent() {
+  const searchParams = useSearchParams();
+  const destNameParam = searchParams?.get('destName');
+  const destLatParam = searchParams?.get('destLat');
+  const destLngParam = searchParams?.get('destLng');
+
+  // Input State (Form input pengguna yang sedang diedit)
+  const [originInput, setOriginInput] = useState('');
+  const [destInput, setDestInput] = useState('');
+  const [originCoord, setOriginCoord] = useState<{ lat: number; lng: number } | null>(null);
+  const [destCoord, setDestCoord] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Applied Map State (Titik A dan B di peta Leaflet yang HANYA diperbarui saat klik 'Cari Rute')
+  const [appliedOrigin, setAppliedOrigin] = useState<{ lat: number; lng: number; label?: string } | null>(null);
+  const [appliedDestination, setAppliedDestination] = useState<{ lat: number; lng: number; label?: string } | null>(null);
 
   // Autocomplete Suggestions State
   const [originSuggestions, setOriginSuggestions] = useState<GeocodeCandidate[]>([]);
@@ -58,6 +69,10 @@ export default function RoutePlannerPage() {
   const [searchingOrigin, setSearchingOrigin] = useState(false);
   const [searchingDest, setSearchingDest] = useState(false);
 
+  // Ref untuk mencegah loop trigger pencarian ulang saat pengguna baru saja memilih dari dropdown
+  const skipOriginSearchRef = useRef(false);
+  const skipDestSearchRef = useRef(false);
+
   // Preference State
   const [transportMode, setTransportMode] = useState<'car' | 'motorcycle' | 'walk'>('car');
   const [exposureWeight, setExposureWeight] = useState(0.8);
@@ -65,7 +80,7 @@ export default function RoutePlannerPage() {
 
   // Result & Map State
   const [result, setResult] = useState<AnalyzeRoutesResponseData | null>(null);
-  const [selectedRouteLabel, setSelectedRouteLabel] = useState<RouteLabel | null>('B');
+  const [selectedRouteLabel, setSelectedRouteLabel] = useState<RouteLabel | null>(null);
   const [stations, setStations] = useState<StationData[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -75,6 +90,24 @@ export default function RoutePlannerPage() {
   const originInputRef = useRef<HTMLInputElement>(null);
   const destInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Handler Pemilihan Titik Asal dari Autocomplete
+  const handleSelectOrigin = (item: GeocodeCandidate) => {
+    skipOriginSearchRef.current = true;
+    setOriginInput(item.label);
+    setOriginCoord({ lat: item.lat, lng: item.lng });
+    setOriginSuggestions([]);
+    setActiveDropdown(null);
+  };
+
+  // Handler Pemilihan Titik Tujuan dari Autocomplete
+  const handleSelectDest = (item: GeocodeCandidate) => {
+    skipDestSearchRef.current = true;
+    setDestInput(item.label);
+    setDestCoord({ lat: item.lat, lng: item.lng });
+    setDestSuggestions([]);
+    setActiveDropdown(null);
+  };
 
   // Listener tutup dropdown saat klik di luar area pencarian
   useEffect(() => {
@@ -86,6 +119,27 @@ export default function RoutePlannerPage() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Baca query parameter dari URL saat diarahkan dari peta polusi (/map)
+  useEffect(() => {
+    if (destNameParam && destLatParam && destLngParam) {
+      const lat = parseFloat(destLatParam);
+      const lng = parseFloat(destLngParam);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        skipDestSearchRef.current = true;
+        setDestInput(destNameParam);
+        setDestCoord({ lat, lng });
+        setDestSuggestions([]);
+        setActiveDropdown(null);
+        // Kosongkan origin dan fokuskan pengguna untuk mengisi titik keberangkatan
+        setOriginInput('');
+        setOriginCoord(null);
+        setTimeout(() => {
+          originInputRef.current?.focus();
+        }, 300);
+      }
+    }
+  }, [destNameParam, destLatParam, destLngParam]);
 
   // 1. Fetch Real Stations on mount untuk visualisasi stasiun udara di peta
   useEffect(() => {
@@ -105,7 +159,11 @@ export default function RoutePlannerPage() {
 
   // 2. Debounced Autocomplete untuk Origin
   useEffect(() => {
-    if (originInput.trim().length < 3) {
+    if (skipOriginSearchRef.current) {
+      skipOriginSearchRef.current = false;
+      return;
+    }
+    if (originInput.trim().length < 2) {
       setOriginSuggestions([]);
       return;
     }
@@ -130,7 +188,11 @@ export default function RoutePlannerPage() {
 
   // 3. Debounced Autocomplete untuk Destination
   useEffect(() => {
-    if (destInput.trim().length < 3) {
+    if (skipDestSearchRef.current) {
+      skipDestSearchRef.current = false;
+      return;
+    }
+    if (destInput.trim().length < 2) {
       setDestSuggestions([]);
       return;
     }
@@ -153,25 +215,67 @@ export default function RoutePlannerPage() {
     return () => clearTimeout(timer);
   }, [destInput]);
 
-  // 4. Trigger Initial Route Analysis saat pertama kali buka
-  useEffect(() => {
-    handleSearchRoutes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // Handler Cari Rute ke Endpoint Real /api/routes/analyze
   const handleSearchRoutes = async () => {
-    setLoading(true);
-    setErrorMessage(null);
     setActiveDropdown(null);
+    setErrorMessage(null);
+
+    if (!originInput.trim() || !destInput.trim()) {
+      setErrorMessage('Silakan tentukan titik keberangkatan dan titik tujuan terlebih dahulu.');
+      return;
+    }
+
+    setLoading(true);
 
     try {
+      // Resolve koordinat asal jika pengguna mengetik tanpa klik dropdown
+      let currentOriginCoord = originCoord;
+      if (!currentOriginCoord) {
+        try {
+          const res = await fetch(`/api/geocode?q=${encodeURIComponent(originInput)}`);
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            currentOriginCoord = { lat: json.data[0].lat, lng: json.data[0].lng };
+            setOriginCoord(currentOriginCoord);
+          } else {
+            setErrorMessage('Titik awal tidak ditemukan. Silakan pilih lokasi dari saran yang muncul.');
+            setLoading(false);
+            return;
+          }
+        } catch {
+          setErrorMessage('Gagal mencari koordinat titik awal.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Resolve koordinat tujuan jika pengguna mengetik tanpa klik dropdown
+      let currentDestCoord = destCoord;
+      if (!currentDestCoord) {
+        try {
+          const res = await fetch(`/api/geocode?q=${encodeURIComponent(destInput)}`);
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            currentDestCoord = { lat: json.data[0].lat, lng: json.data[0].lng };
+            setDestCoord(currentDestCoord);
+          } else {
+            setErrorMessage('Titik tujuan tidak ditemukan. Silakan pilih lokasi dari saran yang muncul.');
+            setLoading(false);
+            return;
+          }
+        } catch {
+          setErrorMessage('Gagal mencari koordinat titik tujuan.');
+          setLoading(false);
+          return;
+        }
+      }
+
       const res = await fetch('/api/routes/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          origin: { lat: originCoord.lat, lng: originCoord.lng },
-          destination: { lat: destCoord.lat, lng: destCoord.lng },
+          origin: { lat: currentOriginCoord.lat, lng: currentOriginCoord.lng },
+          destination: { lat: currentDestCoord.lat, lng: currentDestCoord.lng },
           preferences: {
             exposureWeight,
             maxExtraTimePercent: extraTimeTolerance,
@@ -183,6 +287,9 @@ export default function RoutePlannerPage() {
 
       if (json.success && json.data) {
         setResult(json.data);
+        // Terapkan titik A dan B ke peta hanya saat tombol 'Cari Rute' diklik & berhasil dihitung
+        setAppliedOrigin({ lat: currentOriginCoord.lat, lng: currentOriginCoord.lng, label: originInput });
+        setAppliedDestination({ lat: currentDestCoord.lat, lng: currentDestCoord.lng, label: destInput });
         // Default pilih rute yang direkomendasikan sistem
         setSelectedRouteLabel(json.data.recommendedRouteLabel || json.data.routes[0]?.label || 'A');
         setShowDetailsDrawer(true);
@@ -213,33 +320,64 @@ export default function RoutePlannerPage() {
   const recommendedRoute = result?.routes.find((r) => r.label === result?.recommendedRouteLabel) || result?.routes[0];
   const fastestRoute = result?.routes.find((r) => r.isFastest) || result?.routes[0];
 
-  // Stasiun kualitas udara terdekat yang dilalui rute terpilih
-  const routeStations = React.useMemo(() => {
-    if (!activeRoute) return [];
+  // Stasiun kualitas udara terdekat yang dilalui rute terpilih (dinamis berganti saat rute diubah)
+  const activeRouteStations = React.useMemo<StationData[]>(() => {
+    if (!result || !activeRoute) return [];
 
-    // 1. Ambil stasiun yang dilalui dari hasil algoritma IDW rute
+    const coords = (activeRoute.geometry?.coordinates as [number, number][]) || [];
+    const stationsById = new Map<string, StationData>();
+    stations.forEach((s) => {
+      stationsById.set(s.stationId, s);
+      stationsById.set(s.stationName, s);
+    });
+
+    const collected: StationData[] = [];
+    const seenIds = new Set<string>();
+
+    // 1. Ambil stasiun yang secara aktual digunakan oleh algoritma estimasi rute ini
     if (activeRoute.estimate?.stationsUsed && activeRoute.estimate.stationsUsed.length > 0) {
-      return activeRoute.estimate.stationsUsed.map((st) => ({
-        stationId: st.stationId,
-        stationName: st.stationName,
-        distanceMeters: st.distanceMeters,
-        pm25: st.pm25,
-        dataType: st.dataType,
-      }));
+      for (const st of activeRoute.estimate.stationsUsed) {
+        if (seenIds.has(st.stationId)) continue;
+        const matched = stationsById.get(st.stationId) || stationsById.get(st.stationName);
+        const lat = st.lat ?? matched?.lat;
+        const lng = st.lng ?? matched?.lng;
+
+        if (typeof lat === 'number' && typeof lng === 'number') {
+          seenIds.add(st.stationId);
+          collected.push({
+            stationId: st.stationId,
+            stationName: st.stationName,
+            sourceName: matched?.sourceName || 'WAQI Official',
+            lat,
+            lng,
+            pm25Concentration: st.pm25,
+            pm25Origin: matched?.pm25Origin || 'measured',
+            pm10Concentration: matched?.pm10Concentration ?? null,
+            dominantPollutant: matched?.dominantPollutant ?? 'pm25',
+            aqi: pm25ToAqi(st.pm25) ?? Math.round(st.pm25 * 2.2),
+            observedAt: matched?.observedAt || new Date().toISOString(),
+            ageMinutes: st.ageMinutes ?? matched?.ageMinutes ?? null,
+            freshness: st.freshness ?? matched?.freshness ?? 'fresh',
+            distanceMeters: st.distanceMeters,
+            dataType: st.dataType,
+          });
+        }
+      }
     }
 
-    // 2. Fallback cerdas: jika stationsUsed belum terisi, cari 3 stasiun terdekat dari titik koridor rute
-    if (stations.length > 0) {
-      const coords = (activeRoute.geometry?.coordinates as [number, number][]) || [];
+    // 2. Jika stasiun belum ada atau rute belum mencakup stationsUsed, cari stasiun terdekat dari koridor rute
+    if (collected.length === 0 && stations.length > 0) {
       const samplePoints: [number, number][] =
         coords.length > 0
-          ? [coords[0], coords[Math.floor(coords.length / 2)], coords[coords.length - 1]]
-          : [
-              [originCoord.lat, originCoord.lng],
-              [destCoord.lat, destCoord.lng],
-            ];
+          ? coords.filter((_, idx) => idx % Math.max(1, Math.floor(coords.length / 40)) === 0)
+          : appliedOrigin && appliedDestination
+          ? [
+              [appliedOrigin.lat, appliedOrigin.lng],
+              [appliedDestination.lat, appliedDestination.lng],
+            ]
+          : [];
 
-      return stations
+      const candidateStations = stations
         .map((st) => {
           let minDistance = Infinity;
           for (const [lat, lng] of samplePoints) {
@@ -247,31 +385,32 @@ export default function RoutePlannerPage() {
             if (d < minDistance) minDistance = d;
           }
           return {
-            stationId: st.stationId,
-            stationName: st.stationName,
+            ...st,
             distanceMeters: minDistance,
-            pm25: st.pm25Concentration ?? 25,
-            dataType: st.dataType,
+            aqi: st.aqi ?? (st.pm25Concentration ? pm25ToAqi(st.pm25Concentration) : 50),
           };
         })
-        .sort((a, b) => a.distanceMeters - b.distanceMeters)
-        .slice(0, 3);
+        .sort((a, b) => (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity));
+
+      // Ambil stasiun dalam radius koridor rute (<= 25 km) atau top 3 terdekat
+      const nearby = candidateStations.filter((s) => (s.distanceMeters ?? Infinity) <= 25000);
+      return (nearby.length > 0 ? nearby : candidateStations).slice(0, 3);
     }
 
-    return [];
-  }, [activeRoute, stations, originCoord, destCoord]);
+    return collected.sort((a, b) => (a.distanceMeters ?? 0) - (b.distanceMeters ?? 0));
+  }, [result, activeRoute, stations, appliedOrigin, appliedDestination]);
 
   return (
     <div className="relative w-full h-[calc(100vh-56px)] mt-[56px] overflow-hidden bg-slate-100">
       {/* 1. Real Interactive Leaflet Navigation Map */}
       <div className="w-full h-full absolute inset-0 z-0">
         <NavigationMap
-          origin={{ lat: originCoord.lat, lng: originCoord.lng, label: originInput }}
-          destination={{ lat: destCoord.lat, lng: destCoord.lng, label: destInput }}
+          origin={appliedOrigin}
+          destination={appliedDestination}
           routes={result?.routes || []}
           selectedRouteLabel={selectedRouteLabel}
           onSelectRoute={(label) => setSelectedRouteLabel(label)}
-          stations={stations}
+          stations={activeRouteStations}
         />
       </div>
 
@@ -347,22 +486,29 @@ export default function RoutePlannerPage() {
 
                 {/* Autocomplete Dropdown Origin (Hanya tampil saat activeDropdown === 'origin') */}
                 {activeDropdown === 'origin' && originSuggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-50 max-h-48 overflow-y-auto custom-scrollbar">
-                    {originSuggestions.map((item, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => {
-                          setOriginInput(item.label.split(',')[0]);
-                          setOriginCoord({ lat: item.lat, lng: item.lng });
-                          setActiveDropdown(null);
-                        }}
-                        className="w-full text-left px-3 py-2 text-xs hover:bg-emerald-50 border-b border-slate-100 last:border-none flex items-start gap-2 text-slate-700"
-                      >
-                        <span className="text-slate-400 mt-0.5">📍</span>
-                        <span className="line-clamp-2">{item.label}</span>
-                      </button>
-                    ))}
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-50 max-h-56 overflow-y-auto custom-scrollbar">
+                    {originSuggestions.map((item, idx) => {
+                      const parts = item.label.split(',');
+                      const title = parts[0]?.trim() || item.label;
+                      const subtitle = parts.slice(1, 4).map((p) => p.trim()).join(', ');
+
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleSelectOrigin(item)}
+                          className="w-full text-left px-3.5 py-2.5 text-xs hover:bg-emerald-50 border-b border-slate-100 last:border-none flex items-start gap-2.5 text-slate-700 transition"
+                        >
+                          <span className="text-emerald-600 mt-0.5 text-xs">📍</span>
+                          <div className="min-w-0 flex-1">
+                            <strong className="block text-slate-900 font-semibold truncate">{title}</strong>
+                            {subtitle && (
+                              <span className="block text-[11px] text-slate-500 truncate">{subtitle}</span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -388,22 +534,29 @@ export default function RoutePlannerPage() {
 
                 {/* Autocomplete Dropdown Destination (Hanya tampil saat activeDropdown === 'destination') */}
                 {activeDropdown === 'destination' && destSuggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-50 max-h-48 overflow-y-auto custom-scrollbar">
-                    {destSuggestions.map((item, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => {
-                          setDestInput(item.label.split(',')[0]);
-                          setDestCoord({ lat: item.lat, lng: item.lng });
-                          setActiveDropdown(null);
-                        }}
-                        className="w-full text-left px-3 py-2 text-xs hover:bg-emerald-50 border-b border-slate-100 last:border-none flex items-start gap-2 text-slate-700"
-                      >
-                        <span className="text-rose-400 mt-0.5">📍</span>
-                        <span className="line-clamp-2">{item.label}</span>
-                      </button>
-                    ))}
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-50 max-h-56 overflow-y-auto custom-scrollbar">
+                    {destSuggestions.map((item, idx) => {
+                      const parts = item.label.split(',');
+                      const title = parts[0]?.trim() || item.label;
+                      const subtitle = parts.slice(1, 4).map((p) => p.trim()).join(', ');
+
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleSelectDest(item)}
+                          className="w-full text-left px-3.5 py-2.5 text-xs hover:bg-emerald-50 border-b border-slate-100 last:border-none flex items-start gap-2.5 text-slate-700 transition"
+                        >
+                          <span className="text-rose-500 mt-0.5 text-xs">📍</span>
+                          <div className="min-w-0 flex-1">
+                            <strong className="block text-slate-900 font-semibold truncate">{title}</strong>
+                            {subtitle && (
+                              <span className="block text-[11px] text-slate-500 truncate">{subtitle}</span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -430,8 +583,10 @@ export default function RoutePlannerPage() {
                 key={loc.label}
                 type="button"
                 onClick={() => {
+                  skipDestSearchRef.current = true;
                   setDestInput(loc.label);
                   setDestCoord({ lat: loc.lat, lng: loc.lng });
+                  setDestSuggestions([]);
                   setActiveDropdown(null);
                 }}
                 className="px-2 py-0.5 rounded-full bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-slate-600 whitespace-nowrap transition"
@@ -624,21 +779,22 @@ export default function RoutePlannerPage() {
           </div>
 
           {/* Stasiun Kualitas Udara Terdekat yang Dilalui */}
-          {routeStations.length > 0 && (
+          {activeRouteStations.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
                   <span>📡</span>
-                  <span>Stasiun Terdekat yang Dilalui</span>
+                  <span>Stasiun Terdekat yang Dilalui (Rute {activeRoute.label})</span>
                 </div>
                 <span className="text-[11px] text-slate-500 font-medium">
-                  {routeStations.length} stasiun
+                  {activeRouteStations.length} stasiun
                 </span>
               </div>
 
               <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto custom-scrollbar">
-                {routeStations.map((st, idx) => {
-                  const aqi = pm25ToAqi(st.pm25) ?? Math.round(st.pm25 * 2.2);
+                {activeRouteStations.map((st, idx) => {
+                  const pmVal = st.pm25Concentration ?? 25;
+                  const aqi = st.aqi ?? pm25ToAqi(pmVal) ?? Math.round(pmVal * 2.2);
                   const isModel =
                     st.dataType === 'model_fallback' ||
                     (st.stationName || '').includes('Open-Meteo') ||
@@ -672,9 +828,9 @@ export default function RoutePlannerPage() {
                           </strong>
                         </div>
                         <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5 truncate">
-                          <span>{formatDistance(st.distanceMeters)} dari rute</span>
+                          <span>{formatDistance(st.distanceMeters ?? 0)} dari rute</span>
                           <span>•</span>
-                          <span>PM2.5: {st.pm25.toFixed(1)} µg/m³</span>
+                          <span>PM2.5: {pmVal.toFixed(1)} µg/m³</span>
                         </div>
                       </div>
 
@@ -726,8 +882,10 @@ export default function RoutePlannerPage() {
           <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
             <button
               onClick={() => {
-                const url = `https://www.google.com/maps/dir/?api=1&origin=${originCoord.lat},${originCoord.lng}&destination=${destCoord.lat},${destCoord.lng}&travelmode=driving`;
-                window.open(url, '_blank');
+                if (appliedOrigin && appliedDestination) {
+                  const url = `https://www.google.com/maps/dir/?api=1&origin=${appliedOrigin.lat},${appliedOrigin.lng}&destination=${appliedDestination.lat},${appliedDestination.lng}&travelmode=driving`;
+                  window.open(url, '_blank');
+                }
               }}
               className="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition shadow-sm"
             >
@@ -750,5 +908,22 @@ export default function RoutePlannerPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function RoutePlannerPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full h-screen bg-slate-100 flex items-center justify-center text-xs text-slate-500">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            <span className="font-semibold text-slate-600">Memuat Navigasi Rute...</span>
+          </div>
+        </div>
+      }
+    >
+      <RoutePlannerContent />
+    </Suspense>
   );
 }

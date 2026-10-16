@@ -303,7 +303,7 @@ export default function AirQualityMapPage() {
 
           {/* Direct CTA: Rencanakan Rute ke Stasiun Ini */}
           <Link
-            href="/routes"
+            href={`/routes?destName=${encodeURIComponent(selectedStation.stationName)}&destLat=${selectedStation.lat}&destLng=${selectedStation.lng}`}
             className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-sm transition"
           >
             <NavigationIcon size={14} />

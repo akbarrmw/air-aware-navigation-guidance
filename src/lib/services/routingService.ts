@@ -53,6 +53,7 @@ interface OsrmRouteResponse {
 
 /**
  * Service Routing Utama (OSRM)
+ * Menghitung rute navigasi riil di seluruh jaringan jalan Indonesia
  * Pemilik: Person 2 (Backend Services)
  */
 export async function getRouteAlternatives(
@@ -69,11 +70,6 @@ export async function getRouteAlternatives(
     );
   }
 
-  const isSimulation = process.env.DATA_MODE === 'simulation';
-  if (isSimulation) {
-    return MOCK_ROUTES;
-  }
-
   // 2. Cache check berdasarkan koordinat dibulatkan (4 desimal ~ 11 meter)
   const cacheKey = `osrm_${origin.lat.toFixed(4)}_${origin.lng.toFixed(4)}_${destination.lat.toFixed(4)}_${destination.lng.toFixed(4)}`;
   const cached = appCache.get<RouteCandidate[]>(cacheKey);
@@ -81,63 +77,68 @@ export async function getRouteAlternatives(
     return cached;
   }
 
+  // 3. Selalu coba memanggil OSRM nyata terlebih dahulu
   try {
-    // 3. Format OSRM: {longitude},{latitude};{longitude},{latitude} dengan permintaan hingga 3 rute alternatif
-    const url = `${CONSTANTS.DEFAULT_ROUTING_URL}/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson&alternatives=3`;
+    const url = `${CONSTANTS.DEFAULT_ROUTING_URL}/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson&alternatives=true`;
 
     const res = await fetchWithTimeout(url, {
       timeoutMs: ECOPULSE_PARAMS.PAR_13_TIMEOUT_ROUTING_MS,
     });
 
-    if (!res.ok) {
-      throw new RoutingServiceError(
-        'Gagal menghubungi server routing',
-        'ROUTING_SERVER_ERROR',
-        502
-      );
+    if (res.ok) {
+      const json: OsrmRouteResponse = await res.json();
+
+      if (json.code === 'Ok' && Array.isArray(json.routes) && json.routes.length > 0) {
+        // Konversi koordinat [lng, lat] -> [lat, lng] untuk setiap rute
+        const rawRoutes: RawRouteInput[] = json.routes.map((r) => ({
+          distanceMeters: r.distance,
+          durationSeconds: r.duration,
+          coordinates: r.geometry.coordinates.map(([lng, lat]) => [lat, lng] as [number, number]),
+        }));
+
+        // Filter, urutkan, beri label A/B/C dan isFastest
+        const processedRoutes = processRouteCandidates(rawRoutes);
+
+        if (processedRoutes.length > 0) {
+          appCache.set(cacheKey, processedRoutes, 5);
+          return processedRoutes;
+        }
+      }
     }
-
-    const json: OsrmRouteResponse = await res.json();
-
-    if (json.code !== 'Ok' || !json.routes || json.routes.length === 0) {
-      throw new RoutingServiceError(
-        'Tidak ditemukan rute darat yang menghubungkan titik asal dan tujuan.',
-        'NO_ROUTE_FOUND',
-        422
-      );
-    }
-
-    // 4. Konversi koordinat [lng, lat] -> [lat, lng] untuk setiap rute
-    const rawRoutes: RawRouteInput[] = json.routes.map((r) => ({
-      distanceMeters: r.distance,
-      durationSeconds: r.duration,
-      coordinates: r.geometry.coordinates.map(([lng, lat]) => [lat, lng] as [number, number]),
-    }));
-
-    // 5. Filter, urutkan, beri label A/B/C dan isFastest
-    const processedRoutes = processRouteCandidates(rawRoutes);
-
-    if (processedRoutes.length === 0) {
-      throw new RoutingServiceError(
-        'Tidak ada rute alternatif yang valid.',
-        'NO_ROUTE_FOUND',
-        422
-      );
-    }
-
-    // 6. Cache hasil selama 5 menit
-    appCache.set(cacheKey, processedRoutes, 5);
-
-    return processedRoutes;
-  } catch (err: unknown) {
-    if (err instanceof RoutingServiceError) {
-      throw err;
-    }
-    console.error('[RoutingService] Error:', err);
-    throw new RoutingServiceError(
-      'Terjadi kendala saat menghitung alternatif rute navigasi.',
-      'ROUTING_FAILED',
-      500
-    );
+  } catch (err) {
+    console.warn('[RoutingService] OSRM live service unreachable, checking fallback:', err);
   }
+
+  // 4. Fallback jika OSRM tidak dapat dihubungi dan mode simulasi aktif
+  const isSimulation = process.env.DATA_MODE === 'simulation';
+  if (isSimulation) {
+    // Generate rute adaptif yang menghubungkan origin dan destination secara nyata jika OSRM offline
+    const fallbackCoords: [number, number][] = [
+      [origin.lat, origin.lng],
+      [(origin.lat * 2 + destination.lat) / 3, (origin.lng * 2 + destination.lng) / 3],
+      [(origin.lat + destination.lat * 2) / 3, (origin.lng + destination.lng * 2) / 3],
+      [destination.lat, destination.lng],
+    ];
+
+    const durationSec = Math.max(300, Math.round(directDistance / 10)); // asumsi ~36 km/jam
+
+    const adaptiveRoute: RouteCandidate = {
+      id: 'route-adaptive-0',
+      label: 'A',
+      isFastest: true,
+      distanceMeters: Math.round(directDistance * 1.3),
+      durationSeconds: durationSec,
+      geometry: {
+        coordinates: fallbackCoords,
+      },
+    };
+
+    return [adaptiveRoute];
+  }
+
+  throw new RoutingServiceError(
+    'Tidak ditemukan rute darat yang menghubungkan titik asal dan tujuan.',
+    'NO_ROUTE_FOUND',
+    422
+  );
 }

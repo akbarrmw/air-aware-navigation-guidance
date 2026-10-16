@@ -97,6 +97,8 @@ export function idwAtPoint(
     ageMinutes: s.ageMinutes,
     freshness: s.freshness,
     dataType: s.dataType,
+    lat: s.lat,
+    lng: s.lng,
   }));
 
   // 2. Anti-singularitas: jika titik berada sangat dekat dengan stasiun (< 100m)

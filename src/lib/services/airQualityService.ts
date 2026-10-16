@@ -14,18 +14,13 @@ export interface AirQualityBounds {
 
 /**
  * Service pengelola data kualitas udara:
- * 1. Mode simulasi: langsung mengembalikan MOCK_STATIONS (mencakup kota-kota besar Indonesia)
- * 2. Mode live: Menggabungkan observasi sensor riil (WAQI) dan model grid (Open-Meteo)
+ * Selalu memprioritaskan stasiun observasi sensor riil (WAQI) dan model grid numerik (Open-Meteo).
+ * Menggunakan data cadangan offline hanya jika kedua provider live tidak dapat dijangkau.
  * Pemilik: Person 2 (Backend Services)
  */
 export async function getAirQualityStations(
   bounds?: AirQualityBounds
 ): Promise<StationData[]> {
-  const isSimulation = process.env.DATA_MODE === 'simulation';
-  if (isSimulation) {
-    return MOCK_STATIONS;
-  }
-
   const effectiveBounds = bounds || {
     south: CONSTANTS.PILOT_CITY.BBOX[0],
     west: CONSTANTS.PILOT_CITY.BBOX[1],
@@ -43,7 +38,7 @@ export async function getAirQualityStations(
     // 1. Ambil stasiun observasi fisik dari WAQI
     const waqiStations = await fetchWaqiStationsInBounds(effectiveBounds);
 
-    // 2. Ambil stasiun model cuaca & udara dari Open-Meteo
+    // 2. Ambil stasiun model cuaca & udara dari Open-Meteo (Realtime & Gratis tanpa API Key)
     let openMeteoStations: StationData[] = [];
     try {
       // Jika bounds luas (misal seluruh Indonesia), ambil titik regional Open-Meteo
@@ -73,14 +68,14 @@ export async function getAirQualityStations(
       console.warn('[AirQualityService] Gagal mengambil data Open-Meteo:', err);
     }
 
-    // 3. Gabungkan data WAQI dan Open-Meteo (hindari duplikasi koordinat yang terlalu berdekatan < 3 km)
+    // 3. Gabungkan data WAQI dan Open-Meteo (hindari duplikasi koordinat yang terlalu berdekatan < 4.4 km)
     const combinedStations: StationData[] = [...waqiStations];
 
     for (const omStation of openMeteoStations) {
       const isTooClose = waqiStations.some((w) => {
         const dLat = Math.abs(w.lat - omStation.lat);
         const dLng = Math.abs(w.lng - omStation.lng);
-        return dLat < 0.04 && dLng < 0.04; // ~4.4 km
+        return dLat < 0.04 && dLng < 0.04;
       });
 
       if (!isTooClose) {
@@ -93,7 +88,7 @@ export async function getAirQualityStations(
       return combinedStations;
     }
 
-    // Jika live API tidak mengembalikan stasiun, fallback ke mock
+    // Jika live API tidak mengembalikan stasiun, fallback ke cadangan offline
     console.warn('[AirQualityService] Tidak ada stasiun ditemukan dari live provider, menggunakan fallback data.');
     return MOCK_STATIONS;
   } catch (err) {

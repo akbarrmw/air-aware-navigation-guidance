@@ -52,6 +52,8 @@ export interface StationData {
   dataType: DataType;
   /** Nama lembaga atau penyedia sumber data (misal: 'BMKG', 'WAQI', 'KLHK') */
   sourceName: string;
+  /** Jarak terdekat stasiun ke koridor rute jika dihitung dalam konteks rute navigasi (meter) */
+  distanceMeters?: number;
 }
 
 /**

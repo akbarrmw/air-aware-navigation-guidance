@@ -176,8 +176,12 @@ export default function NavigationMap({
     markerGroup.clearLayers();
 
     import('leaflet').then((L) => {
+      let originPt: [number, number] | null = null;
+      let destPt: [number, number] | null = null;
+
       // Marker Asal (A - Hijau)
       if (origin && typeof origin.lat === 'number' && typeof origin.lng === 'number') {
+        originPt = [origin.lat, origin.lng];
         const originIcon = L.divIcon({
           className: 'custom-div-icon',
           html: `
@@ -196,6 +200,7 @@ export default function NavigationMap({
 
       // Marker Tujuan (B - Merah Google Maps)
       if (destination && typeof destination.lat === 'number' && typeof destination.lng === 'number') {
+        destPt = [destination.lat, destination.lng];
         const destIcon = L.divIcon({
           className: 'custom-div-icon',
           html: `
@@ -211,8 +216,23 @@ export default function NavigationMap({
         destMarker.bindPopup(`<strong>Titik Tujuan</strong><br/>${destination.label || 'Destinasi'}`);
         markerGroup.addLayer(destMarker);
       }
+
+      // Auto zoom & center ke titik yang baru dipilih jika rute belum digambar
+      if (!routes || routes.length === 0) {
+        if (originPt && destPt) {
+          map.fitBounds([originPt, destPt], {
+            paddingTopLeft: [420, 60],
+            paddingBottomRight: [60, 60],
+            maxZoom: 14,
+          });
+        } else if (originPt) {
+          map.flyTo(originPt, 14, { duration: 1.2 });
+        } else if (destPt) {
+          map.flyTo(destPt, 14, { duration: 1.2 });
+        }
+      }
     });
-  }, [origin, destination]);
+  }, [origin, destination, routes]);
 
   // 4. Render Stasiun Kualitas Udara (AQI Radar Pins)
   useEffect(() => {
