@@ -10,7 +10,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { User, LogIn, LogOut, History, Shield, ChevronDown } from 'lucide-react';
+import { LogIn, LogOut, ChevronDown } from 'lucide-react';
 import { useAuthUser } from '@/lib/client/auth/useAuthUser';
 import { signOut } from '@/lib/client/auth/authActions';
 
@@ -87,20 +87,8 @@ export function UserNav() {
             </span>
           </div>
 
-          {/* Links */}
-          <div className="py-1">
-            <Link
-              href="/history"
-              onClick={() => setDropdownOpen(false)}
-              className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition"
-            >
-              <History className="w-4 h-4 text-emerald-600" />
-              <span>Riwayat Perjalanan</span>
-            </Link>
-          </div>
-
           {/* Sign out */}
-          <div className="border-t border-slate-100 pt-1 mt-1">
+          <div className="pt-1">
             <button
               type="button"
               onClick={handleSignOut}
