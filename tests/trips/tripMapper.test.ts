@@ -98,14 +98,16 @@ describe('Trip Mapper (FR-11)', () => {
       },
     ],
     algorithmVersion: 'v1.0.0',
+    transportMode: 'motorcycle',
   };
 
-  it('mapPayloadToRow memetakan data dengan snake_case dan menyimpan JSONB details', () => {
+  it('mapPayloadToRow memetakan data dengan snake_case, transport_mode, dan menyimpan JSONB details', () => {
     const row = mapPayloadToRow('user-uuid-123', mockPayload);
 
     expect(row.user_id).toBe('user-uuid-123');
     expect(row.origin_label).toBe('Simpang Lima');
     expect(row.destination_label).toBe('Stasiun Tawang');
+    expect(row.transport_mode).toBe('motorcycle');
     expect(row.distance_m).toBe(4500);
     expect(row.duration_s).toBe(900);
     expect(row.confidence_level).toBe('high');
@@ -113,9 +115,14 @@ describe('Trip Mapper (FR-11)', () => {
     expect(typeof row.route_polyline).toBe('string');
     expect(row.data_source).toContain('BMKG Semarang');
     expect(row.estimate_details).toBeDefined();
+
+    // Uji fallback default 'car' saat transportMode tidak diisi
+    const { transportMode: _, ...payloadWithoutMode } = mockPayload;
+    const defaultRow = mapPayloadToRow('user-uuid-123', payloadWithoutMode);
+    expect(defaultRow.transport_mode).toBe('car');
   });
 
-  it('mapRowToListItem menghasilkan item ringkas untuk kartu riwayat', () => {
+  it('mapRowToListItem menghasilkan item ringkas untuk kartu riwayat termasuk transportMode', () => {
     const sampleRow: TripRow = {
       trip_id: 'trip-1',
       user_id: 'user-uuid-123',
@@ -126,6 +133,7 @@ describe('Trip Mapper (FR-11)', () => {
       destination_lat: -6.96,
       destination_lng: 110.43,
       route_polyline: encodePolyline([[-6.99, 110.42], [-6.96, 110.43]]),
+      transport_mode: 'motorcycle',
       distance_m: 5000,
       duration_s: 1200,
       analyzed_at: '2026-10-15T12:00:00Z',
@@ -146,12 +154,13 @@ describe('Trip Mapper (FR-11)', () => {
 
     const listItem = mapRowToListItem(sampleRow);
     expect(listItem.tripId).toBe('trip-1');
+    expect(listItem.transportMode).toBe('motorcycle');
     expect(listItem.distanceMeters).toBe(5000);
     expect(listItem.category).toBe('moderate');
     expect(listItem.wasRecommended).toBe(true);
   });
 
-  it('mapRowToDetail mendekode polyline dan mengembalikan array koordinat', () => {
+  it('mapRowToDetail mendekode polyline dan mengembalikan array koordinat serta transportMode', () => {
     const coords: LatLngTuple[] = [
       [-6.9902, 110.4228],
       [-6.9642, 110.4278],
@@ -166,6 +175,7 @@ describe('Trip Mapper (FR-11)', () => {
       destination_lat: -6.9642,
       destination_lng: 110.4278,
       route_polyline: encodePolyline(coords),
+      transport_mode: 'walk',
       distance_m: 3500,
       duration_s: 700,
       analyzed_at: '2026-10-15T10:00:00Z',
@@ -192,6 +202,7 @@ describe('Trip Mapper (FR-11)', () => {
 
     const detail = mapRowToDetail(sampleRow);
     expect(detail.geometry.length).toBe(2);
+    expect(detail.transportMode).toBe('walk');
     expect(detail.geometry[0][0]).toBeCloseTo(-6.9902, 4);
     expect(detail.geometry[1][0]).toBeCloseTo(-6.9642, 4);
     expect(detail.estimate).toBeDefined();

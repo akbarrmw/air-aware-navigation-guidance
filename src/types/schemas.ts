@@ -167,6 +167,7 @@ export const TripSavePayloadSchema = z.object({
     })
   ),
   algorithmVersion: z.string(),
+  transportMode: z.enum(['car', 'motorcycle', 'walk']).default('car').optional(),
 });
 export type TripSavePayloadInput = z.infer<typeof TripSavePayloadSchema>;
 

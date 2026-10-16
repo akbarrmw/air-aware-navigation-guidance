@@ -151,6 +151,7 @@ describe('Person 3 Database & Security Test Suite (TC-18 to TC-23)', () => {
     usedExposureWeight: 0.5,
     dataSources: [{ sourceName: 'BMKG', dataType: 'station_observation', attributionText: 'BMKG' }],
     algorithmVersion: 'v1.0.0',
+    transportMode: 'motorcycle',
   };
 
   beforeEach(() => {
@@ -221,13 +222,15 @@ describe('Person 3 Database & Security Test Suite (TC-18 to TC-23)', () => {
     expect(saved).toBeDefined();
     expect(saved.originLabel).toBe('Simpang Lima');
     expect(saved.destinationLabel).toBe('Tawang Station');
+    expect(saved.transportMode).toBe('motorcycle');
     expect(saved.distanceMeters).toBe(4500);
     expect(saved.durationSeconds).toBe(900);
     expect(saved.category).toBe('good');
 
-    // Pastikan tersimpan di mock database
+    // Pastikan tersimpan di mock database dengan kolom transport_mode
     expect(mockDb.trips.length).toBe(1);
     expect(mockDb.trips[0].user_id).toBe(userB.id);
+    expect(mockDb.trips[0].transport_mode).toBe('motorcycle');
   });
 
   // TC-21b: Validasi Zod menolak payload perjalanan yang tidak sah
@@ -269,6 +272,13 @@ describe('Person 3 Database & Security Test Suite (TC-18 to TC-23)', () => {
       },
     };
     expect(TripSavePayloadSchema.safeParse(badCoverage).success).toBe(false);
+
+    // 6. Moda transportasi tidak valid
+    const badMode = {
+      ...validPayload,
+      transportMode: 'airplane',
+    };
+    expect(TripSavePayloadSchema.safeParse(badMode).success).toBe(false);
   });
 
   // TC-22: Pengujian RLS (User A tidak dapat mengakses atau menghapus data milik User B)
