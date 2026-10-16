@@ -50,6 +50,18 @@ function getCategoryBadge(category: AqiCategoryCode | null) {
   }
 }
 
+function getTransportModeBadge(mode?: 'car' | 'motorcycle' | 'walk') {
+  switch (mode) {
+    case 'motorcycle':
+      return { icon: '🛵', label: 'Sepeda Motor', color: 'bg-amber-500/20 text-amber-400 border-amber-500/40' };
+    case 'walk':
+      return { icon: '🚶', label: 'Jalan Kaki', color: 'bg-blue-500/20 text-blue-400 border-blue-500/40' };
+    case 'car':
+    default:
+      return { icon: '🚗', label: 'Mobil', color: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40' };
+  }
+}
+
 export default function TripDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -134,6 +146,7 @@ export default function TripDetailPage() {
   }
 
   const categoryBadge = getCategoryBadge(trip.category);
+  const modeBadge = getTransportModeBadge(trip.transportMode);
   const distanceKm = (trip.distanceMeters / 1000).toFixed(2);
   const minutes = Math.round(trip.durationSeconds / 60);
 
@@ -191,6 +204,12 @@ export default function TripDetailPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 ${modeBadge.color}`}
+            >
+              <span>{modeBadge.icon}</span>
+              <span>{modeBadge.label}</span>
+            </span>
             <span
               className={`px-3 py-1 rounded-full text-xs font-bold border ${categoryBadge.color}`}
             >

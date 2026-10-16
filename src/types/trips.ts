@@ -36,6 +36,8 @@ export interface TripSavePayload {
   dataSources: DataSourceInfo[];
   /** Versi algoritma yang digunakan */
   algorithmVersion: string;
+  /** Moda transportasi perjalanan yang dipilih ('car' | 'motorcycle' | 'walk') */
+  transportMode?: 'car' | 'motorcycle' | 'walk';
 }
 
 /**
@@ -48,6 +50,8 @@ export interface TripListItem {
   originLabel: string;
   /** Label nama tempat titik tujuan */
   destinationLabel: string;
+  /** Moda transportasi perjalanan */
+  transportMode: 'car' | 'motorcycle' | 'walk';
   /** Waktu perjalanan dianalisis (ISO UTC string) */
   analyzedAt: string;
   /** Jarak tempuh dalam meter */

@@ -87,8 +87,21 @@ function getAqiBadgeStyle(category: AqiCategoryCode | null): {
   }
 }
 
+function getTransportModeBadge(mode?: 'car' | 'motorcycle' | 'walk') {
+  switch (mode) {
+    case 'motorcycle':
+      return { icon: '🛵', label: 'Motor', style: 'bg-amber-500/10 text-amber-400 border-amber-500/30' };
+    case 'walk':
+      return { icon: '🚶', label: 'Jalan Kaki', style: 'bg-blue-500/10 text-blue-400 border-blue-500/30' };
+    case 'car':
+    default:
+      return { icon: '🚗', label: 'Mobil', style: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30' };
+  }
+}
+
 export function HistoryCard({ trip, onDelete, isDeleting = false }: HistoryCardProps) {
   const badge = getAqiBadgeStyle(trip.category);
+  const modeBadge = getTransportModeBadge(trip.transportMode);
 
   // Format durasi
   const minutes = Math.round(trip.durationSeconds / 60);
@@ -113,6 +126,13 @@ export function HistoryCard({ trip, onDelete, isDeleting = false }: HistoryCardP
         </div>
 
         <div className="flex items-center gap-2">
+          <span
+            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${modeBadge.style}`}
+          >
+            <span>{modeBadge.icon}</span>
+            <span>{modeBadge.label}</span>
+          </span>
+
           {trip.wasRecommended && (
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
               <Sparkles className="w-3 h-3" />

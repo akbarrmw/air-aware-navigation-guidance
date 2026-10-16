@@ -15,6 +15,8 @@ import type { ApiResponse } from '@/types/api';
 import type { AnalyzeRoutesResponseData } from '@/types/analyze';
 import type { RouteLabel } from '@/types/common';
 import type { StationData } from '@/types/air-quality';
+import type { TripSavePayload } from '@/types/trips';
+import { saveTripToHistory } from '@/lib/client/tripsApi';
 import type { GeocodeCandidate } from '@/lib/services/geocodingService';
 import { formatDuration, formatExtraTime, formatDistance } from '@/lib/utils/formatters';
 import { haversineDistanceMeters, pm25ToAqi } from '@/lib/algorithms';
@@ -98,6 +100,8 @@ function RoutePlannerContent() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savedTrip, setSavedTrip] = useState(false);
+  const [savingTrip, setSavingTrip] = useState(false);
+  const [saveTripError, setSaveTripError] = useState<string | null>(null);
   const [showDetailsDrawer, setShowDetailsDrawer] = useState(false);
 
   const originInputRef = useRef<HTMLInputElement>(null);
@@ -427,6 +431,8 @@ function RoutePlannerContent() {
         // Default pilih rute yang direkomendasikan sistem
         setSelectedRouteLabel(json.data.recommendedRouteLabel || json.data.routes[0]?.label || 'A');
         setShowDetailsDrawer(true);
+        setSavedTrip(false);
+        setSaveTripError(null);
       } else {
         setErrorMessage(json.error?.message || 'Gagal menghitung rute alternatif.');
       }
@@ -438,9 +444,58 @@ function RoutePlannerContent() {
     }
   };
 
+  // Handler Simpan Rute Terpilih ke Riwayat Database (FR-11)
+  const handleSaveTrip = async () => {
+    if (!result || !result.routes || result.routes.length === 0 || !appliedOrigin || !appliedDestination) {
+      return;
+    }
+    const currentRoute = result.routes.find((r) => r.label === selectedRouteLabel) || result.routes[0];
+    const fastestRoute = result.routes.find((r) => r.isFastest) || result.routes[0];
+
+    const payload: TripSavePayload = {
+      origin: {
+        label: appliedOrigin.label || originInput || `${appliedOrigin.lat.toFixed(4)}, ${appliedOrigin.lng.toFixed(4)}`,
+        lat: appliedOrigin.lat,
+        lng: appliedOrigin.lng,
+      },
+      destination: {
+        label: appliedDestination.label || destInput || `${appliedDestination.lat.toFixed(4)}, ${appliedDestination.lng.toFixed(4)}`,
+        lat: appliedDestination.lat,
+        lng: appliedDestination.lng,
+      },
+      selectedRoute: currentRoute,
+      fastest: {
+        durationSeconds: fastestRoute.durationSeconds,
+        exposureIndexPm25: fastestRoute.estimate.exposureIndexPm25,
+      },
+      wasRecommended: result.recommendedRouteLabel === currentRoute.label,
+      usedExposureWeight: exposureWeight / 100,
+      dataSources: result.dataSources || [],
+      algorithmVersion: result.algorithmVersion || 'v1.0.0',
+      transportMode: transportMode,
+    };
+
+    setSavingTrip(true);
+    setSaveTripError(null);
+    try {
+      const res = await saveTripToHistory(payload);
+      if (res.success) {
+        setSavedTrip(true);
+      } else {
+        setSaveTripError(res.error?.message || 'Gagal menyimpan riwayat perjalanan.');
+      }
+    } catch {
+      setSaveTripError('Terjadi kendala saat menghubungi server untuk menyimpan riwayat.');
+    } finally {
+      setSavingTrip(false);
+    }
+  };
+
   // Handler pemilihan moda transportasi dengan auto-refetch jika rute telah dicari
   const handleTransportModeChange = (mode: 'car' | 'motorcycle' | 'walk') => {
     setTransportMode(mode);
+    setSavedTrip(false);
+    setSaveTripError(null);
     if ((appliedOrigin && appliedDestination) || (originInput.trim() && destInput.trim())) {
       handleSearchRoutes(mode);
     }
@@ -1242,16 +1297,29 @@ function RoutePlannerContent() {
             </button>
 
             <button
-              onClick={() => setSavedTrip(!savedTrip)}
-              className={`w-full py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition ${
+              type="button"
+              onClick={handleSaveTrip}
+              disabled={savedTrip || savingTrip}
+              className={`w-full py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition ${
                 savedTrip
                   ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
-                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-60'
               }`}
             >
               <HistoryIcon size={14} />
-              <span>{savedTrip ? 'Tersimpan di Riwayat ✓' : 'Simpan Perjalanan'}</span>
+              <span>
+                {savingTrip
+                  ? 'Menyimpan...'
+                  : savedTrip
+                  ? 'Tersimpan di Riwayat ✓'
+                  : 'Simpan Perjalanan'}
+              </span>
             </button>
+            {saveTripError && (
+              <span className="text-[11px] text-rose-500 text-center font-medium block">
+                {saveTripError}
+              </span>
+            )}
           </div>
         </div>
       )}
