@@ -17,6 +17,7 @@ import type { StationData } from '@/types/air-quality';
 import type { GeocodeCandidate } from '@/lib/services/geocodingService';
 import { formatDuration, formatExtraTime, formatDistance } from '@/lib/utils/formatters';
 import { haversineDistanceMeters, pm25ToAqi } from '@/lib/algorithms';
+import { decideRoutes } from '@/lib/algorithms/decide';
 
 // Dynamic import Leaflet NavigationMap untuk mencegah SSR issue di Next.js
 const NavigationMap = dynamic(() => import('@/components/map/NavigationMap'), {
@@ -73,9 +74,9 @@ function RoutePlannerContent() {
   const skipOriginSearchRef = useRef(false);
   const skipDestSearchRef = useRef(false);
 
-  // Preference State
+  // Preference State (Diskrit: 0, 25, 50, 75, 100)
   const [transportMode, setTransportMode] = useState<'car' | 'motorcycle' | 'walk'>('car');
-  const [exposureWeight, setExposureWeight] = useState(0.8);
+  const [exposureWeight, setExposureWeight] = useState(50); // Default 50% (Seimbang)
   const [extraTimeTolerance, setExtraTimeTolerance] = useState(30); // 30% max extra time
 
   // Result & Map State
@@ -277,7 +278,7 @@ function RoutePlannerContent() {
           origin: { lat: currentOriginCoord.lat, lng: currentOriginCoord.lng },
           destination: { lat: currentDestCoord.lat, lng: currentDestCoord.lng },
           preferences: {
-            exposureWeight,
+            exposureWeight: exposureWeight / 100,
             maxExtraTimePercent: extraTimeTolerance,
           },
         }),
@@ -301,6 +302,41 @@ function RoutePlannerContent() {
       setErrorMessage('Terjadi kendala jaringan saat menghubungi layanan navigasi.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handler pergeseran slider prioritas optimasi (0, 25, 50, 75, 100)
+  // Dilengkapi re-evaluasi ALG-03 secara real-time di sisi klien tanpa perlu fetch ulang
+  const handleExposureWeightChange = (newVal: number) => {
+    setExposureWeight(newVal);
+
+    if (result && result.routes && result.routes.length > 0) {
+      try {
+        const decision = decideRoutes({
+          routes: result.routes,
+          preferences: {
+            exposureWeight: newVal / 100,
+            maxExtraTimePercent: extraTimeTolerance,
+          },
+        });
+
+        setResult((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            routes: decision.routes,
+            recommendedRouteLabel: decision.recommendedRouteLabel,
+            explanation: decision.explanation,
+            actionMessages: decision.actionMessages,
+          };
+        });
+
+        if (decision.recommendedRouteLabel) {
+          setSelectedRouteLabel(decision.recommendedRouteLabel);
+        }
+      } catch (err) {
+        console.warn('Gagal mengevaluasi ulang preferensi rute di browser:', err);
+      }
     }
   };
 
@@ -596,30 +632,73 @@ function RoutePlannerContent() {
             ))}
           </div>
 
-          {/* Optimization Preferences Slider */}
+          {/* Optimization Preferences Slider (5 Posisi Diskrit: 0, 25, 50, 75, 100) */}
           <div className="mt-3 pt-3 border-t border-slate-100">
-            <div className="flex items-center justify-between text-xs mb-1">
+            <div className="flex items-center justify-between text-xs mb-1.5">
               <span className="text-slate-600 font-medium">Prioritas Optimasi:</span>
-              <span className="font-bold text-emerald-600">
-                {exposureWeight === 0
-                  ? 'Tercepat (0%)'
-                  : exposureWeight >= 0.8
-                  ? 'Udara Bersih (80%)'
-                  : 'Seimbang (50%)'}
+              <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/80 text-[11px]">
+                {exposureWeight === 0 && 'Tercepat (0% Polusi)'}
+                {exposureWeight === 25 && 'Cenderung Cepat (25% Bersih)'}
+                {exposureWeight === 50 && 'Seimbang (50% : 50%)'}
+                {exposureWeight === 75 && 'Cenderung Bersih (75% Bersih)'}
+                {exposureWeight === 100 && 'Minim Polusi (100% Bersih)'}
               </span>
             </div>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.1"
-              value={exposureWeight}
-              onChange={(e) => setExposureWeight(parseFloat(e.target.value))}
-              className="w-full accent-emerald-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer"
-            />
+
+            <div className="relative py-1">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="25"
+                value={exposureWeight}
+                onChange={(e) => handleExposureWeightChange(parseInt(e.target.value, 10))}
+                className="w-full accent-emerald-600 h-2 bg-slate-200 rounded-lg cursor-pointer transition-all"
+              />
+
+              {/* 5 Step Indicator Ticks & Clickable Labels */}
+              <div className="flex justify-between items-center text-[10px] text-slate-500 font-medium mt-1 px-0.5 select-none">
+                <button
+                  type="button"
+                  onClick={() => handleExposureWeightChange(0)}
+                  className={`hover:text-emerald-700 transition ${exposureWeight === 0 ? 'text-emerald-700 font-bold' : ''}`}
+                >
+                  0%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExposureWeightChange(25)}
+                  className={`hover:text-emerald-700 transition ${exposureWeight === 25 ? 'text-emerald-700 font-bold' : ''}`}
+                >
+                  25%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExposureWeightChange(50)}
+                  className={`hover:text-emerald-700 transition ${exposureWeight === 50 ? 'text-emerald-700 font-bold' : ''}`}
+                >
+                  50%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExposureWeightChange(75)}
+                  className={`hover:text-emerald-700 transition ${exposureWeight === 75 ? 'text-emerald-700 font-bold' : ''}`}
+                >
+                  75%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExposureWeightChange(100)}
+                  className={`hover:text-emerald-700 transition ${exposureWeight === 100 ? 'text-emerald-700 font-bold' : ''}`}
+                >
+                  100%
+                </button>
+              </div>
+            </div>
+
             <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-              <span>Waktu Tempuh</span>
-              <span>Minim Polusi</span>
+              <span>⏱️ Prioritas Waktu</span>
+              <span>🍃 Prioritas Udara Bersih</span>
             </div>
           </div>
 
