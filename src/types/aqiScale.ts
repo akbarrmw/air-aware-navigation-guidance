@@ -1,9 +1,5 @@
 /**
- * @file aqiScale.ts
- * @description Definisi kategori kualitas udara, kode standar, label bahasa Indonesia, dan palet warna representasi visual.
- * @author Person 1 (Core Algorithm & System Integration)
- * @module types/aqiScale
- * @see CODE_SPEC_AANG.md Bagian 3.3
+ * Definisi kategori kualitas udara, kode standar, label, dan warna representasi visual.
  */
 
 /**

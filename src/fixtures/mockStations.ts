@@ -1,9 +1,5 @@
 /**
- * @file mockStations.ts
- * @description Data fixture stasiun kualitas udara simulasi (Semarang Pilot City).
- * @author Person 2 (Backend & External APIs) / Fixture by Person 1
- * @module fixtures/mockStations
- * @see CODE_SPEC_AANG.md Bagian 3.3b & Bagian 6
+ * Data fixture stasiun kualitas udara simulasi (Semarang Pilot City).
  */
 
 import type { StationData } from '@/types/air-quality';

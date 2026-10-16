@@ -2,6 +2,9 @@ import { NextRequest } from 'next/server';
 import { sendSuccess, sendError } from '@/lib/server/apiResponse';
 import { getAirQualityStations } from '@/lib/services/airQualityService';
 
+/**
+ * Mengambil daftar stasiun kualitas udara berdasarkan batas koordinat (bounding box).
+ */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);

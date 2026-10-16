@@ -2,6 +2,9 @@ import { NextRequest } from 'next/server';
 import { sendSuccess, sendError } from '@/lib/server/apiResponse';
 import { searchGeocode } from '@/lib/services/geocodingService';
 
+/**
+ * Mencari saran lokasi geografis berdasarkan kata kunci pencarian.
+ */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get('q');

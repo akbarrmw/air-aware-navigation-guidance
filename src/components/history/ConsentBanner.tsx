@@ -1,11 +1,5 @@
 /**
- * @file ConsentBanner.tsx
- * @description Komponen notifikasi status persetujuan penyimpanan riwayat perjalanan (Consent Banner).
- * Memudahkan pengguna mengaktifkan penyimpanan riwayat sesuai prinsip transparansi PRD.
- * 
- * @author Person 3 (Database, Auth, & History Services)
- * @module components/history/ConsentBanner
- * @see CODE_SPEC_AANG.md Bagian 8.1 & PRD Consent Specification
+ * Komponen banner status persetujuan penyimpanan riwayat perjalanan.
  */
 
 'use client';

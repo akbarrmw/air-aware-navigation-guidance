@@ -1,13 +1,3 @@
-/**
- * @file useStations.ts
- * @description Hook React untuk memuat data stasiun pemantau kualitas udara berdasarkan bounding box viewport peta.
- * Mendukung pembaruan otomatis saat peta digeser/di-zoom (moveend / idle).
- * 
- * @author Person 3 (Database, Auth, & History Services)
- * @module components/air-map/useStations
- * @see CODE_SPEC_AANG.md Bagian 8.1 & FR-02
- */
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -25,6 +15,9 @@ export interface UseStationsResult {
   dataMode: string;
 }
 
+/**
+ * Hook untuk memuat data stasiun pemantau kualitas udara berdasarkan area peta.
+ */
 export function useStations(initialBounds?: BoundingBox): UseStationsResult {
   const [stations, setStations] = useState<StationData[]>([]);
   const [loading, setLoading] = useState(true);

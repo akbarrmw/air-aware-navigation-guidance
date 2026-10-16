@@ -1,11 +1,5 @@
 /**
- * @file route.ts
- * @description API Route handler untuk /api/account (DELETE akun pengguna permanen via Service Role Key).
- * Memverifikasi kata sandi pengguna sebelum eksekusi penghapusan tuntas berjenjang (TC-23).
- * 
- * @author Person 3 (Database, Auth, & History Services)
- * @module app/api/account/route
- * @see CODE_SPEC_AANG.md Bagian 8.1 & TC-23, K-P3.2
+ * API Route handler untuk penghapusan akun pengguna secara permanen (/api/account).
  */
 
 import { withApiHandler, AppError } from '@/lib/server/withApiHandler';
@@ -17,8 +11,7 @@ import {
 } from '@/types/schemas';
 
 /**
- * DELETE /api/account
- * Menghapus akun pengguna permanen beserta baris profiles dan seluruh trips (Cascade Delete).
+ * Menghapus akun pengguna secara permanen.
  */
 export const DELETE = withApiHandler<{ success: boolean; message: string }, DeleteAccountPayloadInput>(
   async ({ body }) => {

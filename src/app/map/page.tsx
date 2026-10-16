@@ -1,11 +1,5 @@
 /**
- * @file page.tsx
- * @description Halaman Peta Kualitas Udara Interaktif Nasional AANG.
- * Menampilkan sebaran stasiun pemantau seluruh Indonesia (WAQI & Open-Meteo),
- * panel pencarian & filter, rincian polutan, dan integrasi rute bersih.
- * 
- * @module app/map/page
- * @see CODE_SPEC_AANG.md Bagian 8.1 & FR-02, TC-33
+ * Halaman Peta Kualitas Udara Interaktif Nasional.
  */
 
 'use client';

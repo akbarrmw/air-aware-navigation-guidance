@@ -1,9 +1,5 @@
 /**
- * @file HistoryCard.tsx
- * @description Kartu ringkasan riwayat perjalanan dengan metrik paparan dan navigasi ke detail (P-05).
- * @author Person 3 (Database, Auth, & History Services) / Refactored for clean light theme
- * @module components/history/HistoryCard
- * @see CODE_SPEC_AANG.md Bagian 8.1 & FR-11
+ * Komponen kartu ringkasan riwayat perjalanan dengan metrik paparan polusi.
  */
 
 'use client';

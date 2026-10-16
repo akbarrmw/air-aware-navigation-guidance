@@ -1,11 +1,5 @@
 /**
- * @file page.tsx
- * @description Halaman Detail Snapshot Riwayat Perjalanan P-06 untuk AANG.
- * Menampilkan ringkasan komparasi paparan, stasiun yang digunakan, dan segmen kontributor polusi.
- * 
- * @author Person 3 (Database, Auth, & History Services) / Refactored for clean light theme
- * @module app/history/[id]/page
- * @see CODE_SPEC_AANG.md Bagian 8.1 & FR-11
+ * Halaman Detail Snapshot Riwayat Perjalanan.
  */
 
 'use client';

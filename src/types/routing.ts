@@ -1,9 +1,5 @@
 /**
- * @file routing.ts
- * @description Kontrak data untuk kandidat rute navigasi yang dihasilkan dari upstream OSRM.
- * @author Person 1 (Core Algorithm & System Integration)
- * @module types/routing
- * @see CODE_SPEC_AANG.md Bagian 3.4
+ * Tipe data kandidat rute navigasi.
  */
 
 import type { RouteLabel, LatLngTuple } from './common';

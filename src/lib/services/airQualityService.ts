@@ -13,10 +13,7 @@ export interface AirQualityBounds {
 }
 
 /**
- * Service pengelola data kualitas udara:
- * Selalu memprioritaskan stasiun observasi sensor riil (WAQI) dan model grid numerik (Open-Meteo).
- * Menggunakan data cadangan offline hanya jika kedua provider live tidak dapat dijangkau.
- * Pemilik: Person 2 (Backend Services)
+ * Mengambil data stasiun kualitas udara gabungan (WAQI dan Open-Meteo) untuk area tertentu.
  */
 export async function getAirQualityStations(
   bounds?: AirQualityBounds

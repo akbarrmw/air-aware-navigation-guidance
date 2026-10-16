@@ -1,9 +1,5 @@
 /**
- * @file geoMath.ts
- * @description Utilitas matematika geodesik bumi (Haversine formula, panjang lintasan, interpolasi koordinat).
- * @author Person 1 (Core Algorithm & System Integration)
- * @module lib/algorithms/geoMath
- * @see CODE_SPEC_AANG.md Bagian 3.8 & Bagian 6 (ALG-01)
+ * Utilitas matematika geodesik bumi (Formula Haversine, panjang lintasan, interpolasi koordinat).
  */
 
 import type { LatLngTuple } from '@/types/common';
@@ -12,17 +8,7 @@ import type { LatLngTuple } from '@/types/common';
 export const EARTH_RADIUS_METERS = 6371000;
 
 /**
- * Menghitung jarak lingkaran besar (Great-Circle Distance) antara dua koordinat geografis
- * menggunakan Formula Haversine dalam satuan meter.
- * 
- * @param a Koordinat titik awal [latitude, longitude]
- * @param b Koordinat titik akhir [latitude, longitude]
- * @returns Jarak dalam satuan meter (>= 0)
- * 
- * @example
- * ```ts
- * const distance = haversineMeters([-7.0514, 110.4388], [-6.9928, 110.4222]);
- * ```
+ * Menghitung jarak antara dua koordinat menggunakan formula Haversine (dalam meter).
  */
 export function haversineMeters(a: LatLngTuple, b: LatLngTuple): number {
   const [lat1, lon1] = a;
@@ -50,13 +36,7 @@ export function haversineMeters(a: LatLngTuple, b: LatLngTuple): number {
 }
 
 /**
- * Menghitung jarak Haversine dalam satuan meter dengan 4 parameter angka (lat1, lon1, lat2, lon2).
- * 
- * @param lat1 Latitude titik 1
- * @param lon1 Longitude titik 1
- * @param lat2 Latitude titik 2
- * @param lon2 Longitude titik 2
- * @returns Jarak dalam meter
+ * Menghitung jarak Haversine dalam satuan meter dari 4 parameter koordinat.
  */
 export function haversineDistanceMeters(
   lat1: number,
@@ -68,10 +48,7 @@ export function haversineDistanceMeters(
 }
 
 /**
- * Menghitung total jarak kumulatif dari suatu polyline lintasan koordinat.
- * 
- * @param path Array koordinat [lat, lng]
- * @returns Total panjang lintasan dalam meter
+ * Menghitung total jarak kumulatif dari suatu polyline lintasan koordinat (meter).
  */
 export function pathLengthMeters(path: LatLngTuple[]): number {
   if (path.length < 2) return 0;
@@ -85,12 +62,7 @@ export function pathLengthMeters(path: LatLngTuple[]): number {
 }
 
 /**
- * Melakukan interpolasi linear koordinat antara titik a dan b pada fraksi jarak tertentu (0.0 s/d 1.0).
- * 
- * @param a Titik pangkal [lat, lng]
- * @param b Titik ujung [lat, lng]
- * @param fraction Proporsi jarak dari a ke b (0.0 = a, 1.0 = b)
- * @returns Koordinat terinterpolasi [lat, lng]
+ * Melakukan interpolasi linear koordinat antara dua titik pada fraksi jarak tertentu (0.0 - 1.0).
  */
 export function interpolatePoint(
   a: LatLngTuple,

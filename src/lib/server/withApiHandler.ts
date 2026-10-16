@@ -1,12 +1,5 @@
 /**
- * @file withApiHandler.ts
- * @description Wrapper tingkat tinggi (Higher-Order Function) untuk handler Next.js API Routes.
- * Menjamin standardisasi validasi input, logging error, pengukuran performa (processingTimeMs),
- * dan enkapsulasi respons dalam amplop ApiResponse<T>.
- * 
- * @author Person 1 (Core Algorithm & System Integration)
- * @module lib/server/withApiHandler
- * @see CODE_SPEC_AANG.md Bagian 6 & 11 (FROZEN CORE)
+ * Wrapper tingkat tinggi untuk handler Next.js API Routes dengan validasi dan amplop ApiResponse.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -61,27 +54,7 @@ export type CoreHandler<TResponse, TBody = unknown, TQuery = unknown> = (
 ) => Promise<TResponse | { data: TResponse; options?: ApiResponseOptions; status?: number }>;
 
 /**
- * Membungkus handler endpoint API Next.js dengan penanganan error, validasi otomatis,
- * dan pembentukan amplop ApiResponse seragam.
- * 
- * @template TResponse Tipe data payload yang dihasilkan handler
- * @template TBody Tipe input body yang diharapkan
- * @template TQuery Tipe input query yang diharapkan
- * 
- * @param handler Fungsi logika bisnis endpoint
- * @param config Konfigurasi skema validasi opsional
- * @returns Standard Next.js route handler function
- * 
- * @example
- * ```ts
- * export const POST = withApiHandler(
- *   async ({ body }) => {
- *     const result = await processRouteAnalysis(body);
- *     return result;
- *   },
- *   { bodySchema: AnalyzeRoutesRequestSchema }
- * );
- * ```
+ * Membungkus handler endpoint API Next.js dengan penanganan galat dan validasi otomatis.
  */
 export function withApiHandler<TResponse, TBody = unknown, TQuery = unknown>(
   handler: CoreHandler<TResponse, TBody, TQuery>,

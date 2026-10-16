@@ -1,11 +1,5 @@
 /**
- * @file page.tsx
- * @description Halaman Riwayat Perjalanan P-05 untuk AANG.
- * Menampilkan daftar riwayat perjalanan terpaginasi, status paparan, dan aksi manajemen data.
- * 
- * @author Person 3 (Database, Auth, & History Services)
- * @module app/history/page
- * @see CODE_SPEC_AANG.md Bagian 8.1 & FR-11, AC-13.1
+ * Halaman Riwayat Perjalanan dan Manajemen Data.
  */
 
 'use client';

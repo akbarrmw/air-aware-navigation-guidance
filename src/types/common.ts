@@ -1,9 +1,5 @@
 /**
- * @file common.ts
- * @description Tipe data primitif dan domain bersama untuk sistem AANG (Air-Aware Navigation Guidance).
- * @author Person 1 (Core Algorithm & System Integration)
- * @module types/common
- * @see CODE_SPEC_AANG.md Bagian 3.1
+ * Tipe data primitif dan domain bersama untuk sistem AANG.
  */
 
 /**

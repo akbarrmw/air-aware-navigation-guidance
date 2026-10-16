@@ -1,9 +1,5 @@
 /**
- * @file apiResponse.ts
- * @description Helper pembentuk amplop standar ApiResponse<T> dan pemetaan status kode HTTP.
- * @author Person 1 (Core Algorithm & System Integration)
- * @module lib/server/apiResponse
- * @see CODE_SPEC_AANG.md Bagian 3.2 & NFR-13
+ * Helper pembentuk amplop standar ApiResponse<T> dan pemetaan status kode HTTP.
  */
 
 import { NextResponse } from 'next/server';
@@ -44,9 +40,6 @@ export interface ApiResponseOptions {
 
 /**
  * Membentuk objek metadata standar respons API.
- * 
- * @param options Konfigurasi metadata opsional
- * @returns Objek ApiMeta dengan waktu ISO UTC saat ini
  */
 export function createApiMeta(options: ApiResponseOptions = {}): ApiMeta {
   const currentMode =
@@ -70,18 +63,7 @@ export function createApiMeta(options: ApiResponseOptions = {}): ApiMeta {
 }
 
 /**
- * Membuat NextResponse sukses berisi data dengan format amplop ApiResponse<T>.
- * 
- * @template T Tipe payload data
- * @param data Objek data payload
- * @param options Opsi metadata (dataMode, processingTime, dsb.)
- * @param status Kode status HTTP (default: 200)
- * @returns NextResponse dengan body ApiResponse<T>
- * 
- * @example
- * ```ts
- * return sendSuccess(payload, { processingTimeMs: 45 });
- * ```
+ * Membuat NextResponse sukses dengan format amplop ApiResponse<T>.
  */
 export function sendSuccess<T>(
   data: T,
@@ -100,18 +82,6 @@ export function sendSuccess<T>(
 
 /**
  * Membuat NextResponse galat dengan format amplop ApiResponse<null>.
- * 
- * @param code Kode galat standar (ErrorCode)
- * @param message Pesan penjelasan penyebab galat
- * @param details Rincian galat tambahan (misal: issues validasi Zod)
- * @param options Opsi metadata
- * @param customStatus Override kode status HTTP (opsional)
- * @returns NextResponse dengan body ApiResponse<null>
- * 
- * @example
- * ```ts
- * return sendError('VALIDATION_ERROR', 'Input koordinat tidak valid', zodErrors);
- * ```
  */
 export function sendError(
   code: ErrorCode,

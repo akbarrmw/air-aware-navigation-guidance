@@ -1,9 +1,5 @@
 /**
- * @file geocoding.ts
- * @description Kontrak data untuk layanan pencarian lokasi dan geocoding.
- * @author Person 1 (Core Algorithm & System Integration)
- * @module types/geocoding
- * @see CODE_SPEC_AANG.md Bagian 3.4
+ * Tipe data pencarian lokasi dan geocoding.
  */
 
 /**

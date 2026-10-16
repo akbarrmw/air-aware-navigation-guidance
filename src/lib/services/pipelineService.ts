@@ -1,11 +1,5 @@
 /**
- * @file pipelineService.ts
- * @description Integrator pipeline analisis rute dan polusi udara.
- * Menggabungkan kandidat rute riil (OSRM), data stasiun (WAQI & Open-Meteo), dan algoritma evaluasi untuk menghasilkan AnalyzeRoutesResponseData.
- * 
- * @author Person 2 (Backend & External APIs) & Person 1 (Core Integration)
- * @module lib/services/pipelineService
- * @see CODE_SPEC_AANG.md Bagian 7.1 & Bagian 11 (Gate G1 & G2)
+ * Pipeline analisis rute dan polusi udara.
  */
 
 import { MOCK_STATIONS } from '@/fixtures/mockStations';
@@ -32,7 +26,7 @@ export interface AnalyzePipelineInput {
 }
 
 /**
- * Menghitung bounding box dari serangkaian rute kandidat ditambah margin radius
+ * Menghitung batas koordinat (bounding box) dari kandidat rute dengan margin radius pencarian.
  */
 function calculateRoutesBBox(routes: RouteCandidate[]): AirQualityBounds {
   let minLat = Infinity;
@@ -66,8 +60,7 @@ const PRODUCTION_DISCLAIMER =
 const PRODUCTION_ALGORITHM_VERSION = '1.0.0-prod';
 
 /**
- * Pipeline Integrator: Menggabungkan Rute + Stasiun + Algoritma Evaluasi.
- * Pemilik: Person 2 (Backend Services)
+ * Menjalankan pipeline analisis rute, pengambilan data kualitas udara, dan komputasi paparan.
  */
 export async function runAnalysisPipeline(
   input: AnalyzePipelineInput

@@ -10,7 +10,7 @@ export interface GeocodeCandidate {
 }
 
 /**
- * Mengecek apakah koordinat berada di dalam area pilot (Semarang)
+ * Mengecek apakah koordinat berada di dalam area pilot Semarang.
  */
 export function isPointWithinPilotArea(lat: number, lng: number): boolean {
   const [minLat, minLng, maxLat, maxLng] = CONSTANTS.PILOT_CITY.BBOX;
@@ -116,8 +116,7 @@ const OFFLINE_PLACES: Array<{ name: string; aliases: string[]; lat: number; lng:
 ];
 
 /**
- * Service Geocoding via Nominatim OpenStreetMap (Cakupan Seluruh Indonesia)
- * Pemilik: Person 2 (Backend Services)
+ * Mencari kandidat koordinat lokasi berdasarkan kata kunci pencarian.
  */
 export async function searchGeocode(query: string): Promise<GeocodeCandidate[]> {
   const q = query.trim();

@@ -1,11 +1,5 @@
 /**
- * @file tripService.ts
- * @description Layanan backend untuk persistensi dan pengelolaan riwayat perjalanan (Trips).
- * Menegakkan verifikasi consent (K-P3.5 & PRD TC-19), isolasi RLS, dan pagination.
- * 
- * @author Person 3 (Database, Auth, & History Services)
- * @module lib/trips/tripService
- * @see CODE_SPEC_AANG.md Bagian 8.1 & FR-11, AC-13.1, TC-19, TC-20
+ * Layanan untuk persistensi dan pengelolaan riwayat perjalanan.
  */
 
 import { createClient } from '@/lib/supabase/server';
@@ -23,10 +17,7 @@ export interface TripListResult {
 }
 
 /**
- * Menyimpan riwayat perjalanan baru ke tabel public.trips.
- * Wajib memvalidasi persetujuan pengguna (history_consent = true).
- * 
- * @throws AppError CONSENT_REQUIRED (403) jika user belum menyetujui consent
+ * Menyimpan riwayat perjalanan baru ke basis data.
  */
 export async function saveTrip(userId: string, payload: TripSavePayload): Promise<TripDetail> {
   const supabase = await createClient();
@@ -79,7 +70,7 @@ export async function saveTrip(userId: string, payload: TripSavePayload): Promis
 }
 
 /**
- * Mengambil daftar riwayat perjalanan terpaginasi milik pengguna aktif.
+ * Mengambil daftar riwayat perjalanan terpaginasi milik pengguna.
  */
 export async function listTrips(
   userId: string,
@@ -123,7 +114,7 @@ export async function listTrips(
 }
 
 /**
- * Mengambil rincian snapshot mendalam satu perjalanan spesifik (P-06).
+ * Mengambil data rincian satu riwayat perjalanan berdasarkan ID.
  */
 export async function getTripById(userId: string, tripId: string): Promise<TripDetail> {
   const supabase = await createClient();
@@ -148,7 +139,7 @@ export async function getTripById(userId: string, tripId: string): Promise<TripD
 }
 
 /**
- * Menghapus satu entri riwayat perjalanan.
+ * Menghapus satu entri riwayat perjalanan pengguna.
  */
 export async function deleteTrip(userId: string, tripId: string): Promise<{ success: boolean; message: string }> {
   const supabase = await createClient();
@@ -175,7 +166,7 @@ export async function deleteTrip(userId: string, tripId: string): Promise<{ succ
 }
 
 /**
- * Menghapus seluruh riwayat perjalanan milik pengguna aktif (AC-13.1).
+ * Menghapus seluruh riwayat perjalanan milik pengguna.
  */
 export async function deleteAllTrips(userId: string): Promise<{ success: boolean; message: string }> {
   const supabase = await createClient();

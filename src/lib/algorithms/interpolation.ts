@@ -1,11 +1,5 @@
 /**
- * @file interpolation.ts
- * @description Modul interpolasi spasial Inverse Distance Weighting (IDW) dengan ambang anti-singularitas (ALG-02).
- * Digunakan untuk mengestimasi konsentrasi polutan PM2.5 pada titik koordinat diskrit lintasan perjalanan.
- * 
- * @author Person 1 (Core Algorithm & System Integration)
- * @module lib/algorithms/interpolation
- * @see CODE_SPEC_AANG.md Bagian 3.8 & Bagian 6 (ALG-02, FR-05, TC-03, TC-04)
+ * Modul interpolasi spasial Inverse Distance Weighting (IDW) dengan ambang anti-singularitas.
  */
 
 import type { LatLngTuple } from '@/types/common';
@@ -20,24 +14,7 @@ import { haversineMeters, haversineDistanceMeters } from './geoMath';
 export const calculateDistanceMeters = haversineDistanceMeters;
 
 /**
- * ALG-02: Melakukan interpolasi spasial Inverse Distance Weighting (IDW) pada satu titik koordinat.
- * 
- * Aturan algoritma:
- * 1. Filter stasiun: PM2.5 valid (!= null), tidak expired (usia <= expiredAfterMinutes / PAR-05),
- *    dan jarak <= stationRadiusMeters (PAR-02, default 10 km).
- * 2. Urutkan dan ambil K = nearestStationCount (PAR-03, default 3) stasiun terdekat.
- * 3. Ambang batas anti-singularitas:
- *    Jika jarak stasiun terdekat < idwEpsilonMeters (PAR-11, default 100m),
- *    gunakan nilai konsentrasi stasiun tersebut langsung tanpa pembobotan jarak (TC-03).
- * 4. Pembobotan IDW:
- *    w_j = 1 / (d_j ^ idwPower)
- *    C = (Σ w_j * C_j) / (Σ w_j)
- * 5. Jika tidak ada stasiun dalam radius, kembalikan pm25: null (BUKAN 0!) (TC-04).
- * 
- * @param point Titik koordinat yang akan diestimasi [lat, lng]
- * @param stations Daftar seluruh stasiun kualitas udara yang tersedia
- * @param params Konfigurasi parameter numerik algoritma (PAR-01 s/d PAR-14)
- * @returns IdwResult berisi pm25, stationsUsed, nearestDistanceMeters, dan uncertaintyClass
+ * Melakukan interpolasi spasial Inverse Distance Weighting (IDW) pada satu titik koordinat.
  */
 export function idwAtPoint(
   point: LatLngTuple,
@@ -154,7 +131,7 @@ export function idwAtPoint(
 }
 
 /**
- * Adapter fungsi interpolasi lama (kompatibilitas antarmuka)
+ * Melakukan interpolasi IDW untuk koordinat latitude dan longitude.
  */
 export function interpolateIdw(
   targetLat: number,

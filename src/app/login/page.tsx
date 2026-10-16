@@ -1,8 +1,5 @@
 /**
- * @file page.tsx
- * @description Halaman Autentikasi Pengguna P-04 (Mode Masuk & Mode Daftar) untuk AANG.
- * @author Person 3 (Database, Auth, & History Services) / Refactored for clean light theme
- * @see CODE_SPEC_AANG.md Bagian 8.1 & FR-10
+ * Halaman Autentikasi Pengguna (Masuk & Daftar).
  */
 
 'use client';
@@ -80,7 +77,7 @@ function AuthContent() {
           href="/routes"
           className="text-xs font-semibold text-slate-500 hover:text-emerald-700 transition"
         >
-          ← Lanjutkan Analisis Rute sebagai Pengunjung (Tanpa Login)
+          Lanjutkan Analisis Rute sebagai Pengunjung (Tanpa Login)
         </Link>
       </div>
     </div>

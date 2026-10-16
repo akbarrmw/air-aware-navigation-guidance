@@ -1,9 +1,5 @@
 /**
- * @file confidence.ts
- * @description Modul penentuan tingkat keyakinan (Confidence Level) hasil estimasi paparan rute (M-04).
- * @author Person 1 (Core Algorithm & System Integration)
- * @module lib/algorithms/confidence
- * @see CODE_SPEC_AANG.md Bagian 3.5 & PRD Bagian 9.4 (TC-07)
+ * Modul penentuan tingkat keyakinan (Confidence Level) hasil estimasi paparan rute.
  */
 
 import type { ConfidenceLevel } from '@/types/algorithms';
@@ -27,26 +23,7 @@ export interface ConfidenceEvaluationMetrics {
 }
 
 /**
- * Menentukan tingkat keyakinan (Confidence Level) ilmiah estimasi paparan rute.
- * 
- * Aturan tingkatan (Hierarki TC-07):
- * 1. `unavailable`:
- *    - Jika coverageRatio < minCoverageRatio (PAR-08, default 0.20 / 20%).
- * 2. `high`:
- *    - coverageRatio >= 0.80 (80%)
- *    - nearbyStationDurationRatio >= 0.50 (50% rute berada dekat stasiun <= 3km)
- *    - maxDataAgeMinutes <= freshMaxMinutes (PAR-04, default 180 menit / 3 jam)
- *    - hasExpiredData === false
- *    - hasModelFallback === false (model fallback membatasi maksimal Medium)
- * 3. `medium`:
- *    - coverageRatio >= 0.50 (50%)
- *    - hasExpiredData === false
- * 4. `low`:
- *    - coverageRatio >= 0.20 (20%)
- * 
- * @param metrics Metrik evaluasi cakupan dan kesegaran data
- * @param params Parameter algoritma
- * @returns Tingkat keyakinan: 'high' | 'medium' | 'low' | 'unavailable'
+ * Menentukan tingkat keyakinan (Confidence Level) estimasi paparan rute.
  */
 export function determineConfidenceLevel(
   metrics: ConfidenceEvaluationMetrics,

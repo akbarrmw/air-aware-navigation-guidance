@@ -1,10 +1,5 @@
 /**
- * @file route.ts
- * @description API Route handler untuk /api/account/consent (PATCH toggle persetujuan riwayat).
- * 
- * @author Person 3 (Database, Auth, & History Services)
- * @module app/api/account/consent/route
- * @see CODE_SPEC_AANG.md Bagian 8.1 & PRD Consent Specification
+ * API Route handler untuk pembaruan persetujuan riwayat perjalanan (/api/account/consent).
  */
 
 import { withApiHandler, AppError } from '@/lib/server/withApiHandler';
@@ -17,8 +12,7 @@ interface ConsentResponse {
 }
 
 /**
- * PATCH /api/account/consent
- * Memperbarui status persetujuan penyimpanan data lokasi dan riwayat perjalanan.
+ * Memperbarui status persetujuan penyimpanan riwayat perjalanan.
  */
 export const PATCH = withApiHandler<ConsentResponse, ConsentPayloadInput>(
   async ({ body }) => {

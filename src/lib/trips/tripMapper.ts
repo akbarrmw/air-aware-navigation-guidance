@@ -1,11 +1,5 @@
 /**
- * @file tripMapper.ts
- * @description Pemetaan dua arah antara Payload Perjalanan (klien, camelCase) dan Baris Database (Postgres, snake_case).
- * Mengintegrasikan encoding dan decoding polyline rute untuk efisiensi penyimpanan database.
- * 
- * @author Person 3 (Database, Auth, & History Services)
- * @module lib/trips/tripMapper
- * @see CODE_SPEC_AANG.md Bagian 3.6 & Bagian 8.1
+ * Pemetaan antara payload perjalanan dan baris database PostgreSQL.
  */
 
 import type { TripSavePayload, TripListItem, TripDetail } from '@/types/trips';
@@ -15,11 +9,7 @@ import type { RouteExposureEstimate } from '@/types/algorithms';
 import { encodePolyline, decodePolyline } from './polyline';
 
 /**
- * Mengubah TripSavePayload dari klien menjadi baris siap simpan ke PostgreSQL (TripInsertRow).
- * 
- * @param userId ID unik pengguna yang diautentikasi
- * @param payload Payload data perjalanan dari request klien
- * @returns TripInsertRow untuk di-insert ke tabel public.trips
+ * Mengubah TripSavePayload menjadi baris data database (TripInsertRow).
  */
 export function mapPayloadToRow(userId: string, payload: TripSavePayload): TripInsertRow {
   const route = payload.selectedRoute;
@@ -75,10 +65,7 @@ export function mapPayloadToRow(userId: string, payload: TripSavePayload): TripI
 }
 
 /**
- * Mengubah satu baris database (TripRow) menjadi representasi ringkas untuk daftar riwayat (TripListItem).
- * 
- * @param row Baris data dari tabel public.trips
- * @returns TripListItem untuk kartu riwayat
+ * Mengubah baris database (TripRow) menjadi data ringkas untuk daftar riwayat (TripListItem).
  */
 export function mapRowToListItem(row: TripRow): TripListItem {
   return {
@@ -98,11 +85,7 @@ export function mapRowToListItem(row: TripRow): TripListItem {
 }
 
 /**
- * Mengubah baris database (TripRow) menjadi representasi rincian lengkap perjalanan (TripDetail).
- * Menguraikan kembali encoded polyline ke dalam array koordinat asli.
- * 
- * @param row Baris data dari tabel public.trips
- * @returns TripDetail lengkap untuk halaman rincian P-06
+ * Mengubah baris database (TripRow) menjadi data rincian lengkap perjalanan (TripDetail).
  */
 export function mapRowToDetail(row: TripRow): TripDetail {
   const listItem = mapRowToListItem(row);

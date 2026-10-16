@@ -1,9 +1,5 @@
 /**
- * @file api.ts
- * @description Kontrak standar amplop respons API, kode galat, dan peringatan di seluruh endpoint AANG.
- * @author Person 1 (Core Algorithm & System Integration)
- * @module types/api
- * @see CODE_SPEC_AANG.md Bagian 3.2 & NFR-13
+ * Kontrak standar amplop respons API dan kode galat di seluruh endpoint AANG.
  */
 
 import type { DataMode } from './common';

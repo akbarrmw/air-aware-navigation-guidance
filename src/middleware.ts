@@ -1,16 +1,10 @@
-/**
- * @file middleware.ts
- * @description Next.js Middleware untuk penyegaran sesi Supabase dan proteksi rute privat.
- * Memastikan /history dan /settings hanya dapat diakses oleh pengguna terautentikasi (SEC-03).
- * 
- * @author Person 3 (Database, Auth, & History Services)
- * @see CODE_SPEC_AANG.md Bagian 8.1 & PRD SEC-03
- */
-
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import type { Database } from '@/types/database';
 
+/**
+ * Middleware untuk penyegaran sesi Supabase dan proteksi rute privat.
+ */
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,

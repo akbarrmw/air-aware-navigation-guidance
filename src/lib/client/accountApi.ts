@@ -1,10 +1,5 @@
 /**
- * @file accountApi.ts
- * @description Modul klien API ter-type aman untuk preferensi pengguna, konsensus privasi, dan penghapusan akun.
- * 
- * @author Person 3 (Database, Auth, & History Services)
- * @module lib/client/accountApi
- * @see CODE_SPEC_AANG.md Bagian 8.1
+ * Modul klien API untuk preferensi pengguna dan pengelolaan akun.
  */
 
 import type { ApiResponse } from '@/types/api';
@@ -12,7 +7,7 @@ import type { PreferencesPayload } from '@/types/trips';
 import type { PreferencesPayloadInput } from '@/types/schemas';
 
 /**
- * Mengambil preferensi rute dan status konsensus privasi pengguna aktif.
+ * Mengambil preferensi rute dan status privasi pengguna.
  */
 export async function fetchUserPreferences(): Promise<ApiResponse<PreferencesPayload>> {
   const response = await fetch('/api/preferences', {
@@ -47,7 +42,7 @@ export async function updateUserPreferences(
 }
 
 /**
- * Memperbarui secara instan status toggle persetujuan penyimpanan riwayat.
+ * Memperbarui status persetujuan penyimpanan riwayat perjalanan.
  */
 export async function updateHistoryConsent(
   historyConsent: boolean
@@ -69,7 +64,7 @@ export async function updateHistoryConsent(
 }
 
 /**
- * Menghapus akun pengguna secara permanen setelah verifikasi kata sandi (TC-23).
+ * Menghapus akun pengguna secara permanen.
  */
 export async function deleteUserAccount(
   password: string

@@ -31,8 +31,7 @@ export const INDONESIA_REGIONAL_POINTS = [
 ];
 
 /**
- * Adapter untuk mengambil data polusi model Open-Meteo untuk satu titik (FR-17 Fallback)
- * Pemilik: Person 2 (Backend Services)
+ * Mengambil data kualitas udara Open-Meteo untuk koordinat tertentu.
  */
 export async function fetchOpenMeteoAirQuality(
   lat: number,
@@ -81,7 +80,7 @@ export async function fetchOpenMeteoAirQuality(
 }
 
 /**
- * Mengambil sekumpulan titik stasiun model Open-Meteo secara batch di berbagai wilayah Indonesia
+ * Mengambil data kualitas udara Open-Meteo untuk beberapa titik wilayah sekaligus.
  */
 export async function fetchOpenMeteoMultiStations(
   points: Array<{ name: string; lat: number; lng: number }> = INDONESIA_REGIONAL_POINTS

@@ -1,12 +1,5 @@
 /**
- * @file mockAnalysis.ts
- * @description Data fixture respons lengkap analisis rute untuk Gate G0 (Mock Scenarios).
- * Memungkinkan Person 2 (API/Backend), Person 3 (Database/History), dan Person 4 (UI/Map)
- * bekerja secara independen tanpa menunggu algoritma produksi selesai.
- * 
- * @author Person 1 (Core Algorithm & System Integration)
- * @module fixtures/mockAnalysis
- * @see CODE_SPEC_AANG.md Bagian 3.6 & Bagian 6 (FR-06, FR-14)
+ * Data fixture respons analisis rute navigasi.
  */
 
 import type {

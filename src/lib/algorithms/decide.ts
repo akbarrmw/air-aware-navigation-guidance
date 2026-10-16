@@ -1,12 +1,5 @@
 /**
- * @file decide.ts
- * @description Modul isomorfik pengambil keputusan rekomendasi rute navigasi (ALG-03).
- * Dapat dijalankan di sisi server (/api/routes/analyze) maupun di peramban klien (P4)
- * saat pengguna menggeser slider preferensi tanpa perlu melakukan fetch jaringan ulang.
- * 
- * @author Person 1 (Core Algorithm & System Integration)
- * @module lib/algorithms/decide
- * @see CODE_SPEC_AANG.md Bagian 3.8 & Bagian 6 (ALG-03, FR-06, FR-07, FR-08, TC-08, TC-09, TC-10)
+ * Modul pengambil keputusan rekomendasi rute navigasi multi-kriteria.
  */
 
 import type { RouteCandidate } from '@/types/routing';
@@ -37,22 +30,7 @@ export interface DecideRoutesInput {
 }
 
 /**
- * ALG-03: Menentukan rute yang direkomendasikan secara multi-kriteria berbasis trade-off waktu vs polusi.
- * 
- * Tahapan logika:
- * 1. Temukan rute tercepat sebagai titik referensi (baseline).
- * 2. Hitung metrik komparasi (extraSeconds, extraPercent, exposureDeltaPercent).
- * 3. Evaluasi batas toleransi waktu pengguna (withinTimeLimit).
- * 4. Deteksi dominasi Pareto (rute yang waktu dan polusinya terbukti inferior).
- * 5. Normalisasi nilai durasi dan polusi, lalu hitung skor gabungan terbobot:
- *    S_r = (1 - w_exp) * T_norm + w_exp * E_norm
- * 6. Evaluasi ambang batas signifikansi 5% (PAR-07):
- *    Jika reduksi polusi rute alternatif < 5% dibanding rute tercepat,
- *    rekomendasi dikembalikan ke rute tercepat (alasan: DIFFERENCE_NOT_SIGNIFICANT) (TC-10).
- * 7. Rakit penjelasan transparan (ExplanationInfo) dan pesan mitigasi kesehatan (ActionMessage[]).
- * 
- * @param input Objek DecideRoutesInput
- * @returns DecisionResult lengkap (routes, recommendedRouteLabel, explanation, actionMessages)
+ * Menentukan rute yang direkomendasikan secara multi-kriteria berbasis trade-off waktu vs polusi.
  */
 export function decideRoutes(input: DecideRoutesInput): DecisionResult {
   const { routes, preferences } = input;
