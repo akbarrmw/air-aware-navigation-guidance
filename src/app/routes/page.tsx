@@ -217,9 +217,11 @@ function RoutePlannerContent() {
   }, [destInput]);
 
   // Handler Cari Rute ke Endpoint Real /api/routes/analyze
-  const handleSearchRoutes = async () => {
+  const handleSearchRoutes = async (targetMode?: 'car' | 'motorcycle' | 'walk') => {
     setActiveDropdown(null);
     setErrorMessage(null);
+
+    const activeMode = targetMode || transportMode;
 
     if (!originInput.trim() || !destInput.trim()) {
       setErrorMessage('Silakan tentukan titik keberangkatan dan titik tujuan terlebih dahulu.');
@@ -271,6 +273,9 @@ function RoutePlannerContent() {
         }
       }
 
+      const effectiveTolerance =
+        exposureWeight === 100 ? 50 : exposureWeight === 75 ? 40 : extraTimeTolerance;
+
       const res = await fetch('/api/routes/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -279,8 +284,9 @@ function RoutePlannerContent() {
           destination: { lat: currentDestCoord.lat, lng: currentDestCoord.lng },
           preferences: {
             exposureWeight: exposureWeight / 100,
-            maxExtraTimePercent: extraTimeTolerance,
+            maxExtraTimePercent: effectiveTolerance,
           },
+          transportMode: activeMode,
         }),
       });
 
@@ -305,6 +311,14 @@ function RoutePlannerContent() {
     }
   };
 
+  // Handler pemilihan moda transportasi dengan auto-refetch jika rute telah dicari
+  const handleTransportModeChange = (mode: 'car' | 'motorcycle' | 'walk') => {
+    setTransportMode(mode);
+    if ((appliedOrigin && appliedDestination) || (originInput.trim() && destInput.trim())) {
+      handleSearchRoutes(mode);
+    }
+  };
+
   // Handler pergeseran slider prioritas optimasi (0, 25, 50, 75, 100)
   // Dilengkapi re-evaluasi ALG-03 secara real-time di sisi klien tanpa perlu fetch ulang
   const handleExposureWeightChange = (newVal: number) => {
@@ -312,11 +326,16 @@ function RoutePlannerContent() {
 
     if (result && result.routes && result.routes.length > 0) {
       try {
+        // Jika pengguna memilih prioritas udara bersih (75% / 100%), perlonggar batas toleransi waktu
+        // agar rute yang lebih bersih tidak tereliminasi oleh selisih durasi beberapa menit
+        const effectiveTolerance =
+          newVal === 100 ? 50 : newVal === 75 ? 40 : extraTimeTolerance;
+
         const decision = decideRoutes({
           routes: result.routes,
           preferences: {
             exposureWeight: newVal / 100,
-            maxExtraTimePercent: extraTimeTolerance,
+            maxExtraTimePercent: effectiveTolerance,
           },
         });
 
@@ -455,7 +474,7 @@ function RoutePlannerContent() {
         {/* Mode Selector Tabs (Google Maps Style) */}
         <div className="flex items-center justify-around border-b border-slate-200/80 bg-slate-50/70 py-2 px-3">
           <button
-            onClick={() => setTransportMode('car')}
+            onClick={() => handleTransportModeChange('car')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
               transportMode === 'car'
                 ? 'bg-white text-emerald-700 shadow-sm border border-slate-200'
@@ -466,7 +485,7 @@ function RoutePlannerContent() {
             <span>Mobil</span>
           </button>
           <button
-            onClick={() => setTransportMode('motorcycle')}
+            onClick={() => handleTransportModeChange('motorcycle')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
               transportMode === 'motorcycle'
                 ? 'bg-white text-emerald-700 shadow-sm border border-slate-200'
@@ -477,7 +496,7 @@ function RoutePlannerContent() {
             <span>Motor</span>
           </button>
           <button
-            onClick={() => setTransportMode('walk')}
+            onClick={() => handleTransportModeChange('walk')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
               transportMode === 'walk'
                 ? 'bg-white text-emerald-700 shadow-sm border border-slate-200'
@@ -704,7 +723,7 @@ function RoutePlannerContent() {
 
           {/* Cari Rute Button */}
           <button
-            onClick={handleSearchRoutes}
+            onClick={() => handleSearchRoutes()}
             disabled={loading}
             className="w-full mt-3 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition"
           >
@@ -741,7 +760,12 @@ function RoutePlannerContent() {
               {result.routes.map((route) => {
                 const isSelected = route.label === selectedRouteLabel;
                 const isRecommended = route.label === result.recommendedRouteLabel;
-                const isCleanAir = !route.isFastest;
+                const isActuallyCleaner =
+                  route.comparison.exposureDeltaPercent !== null &&
+                  route.comparison.exposureDeltaPercent < 0;
+                const isActuallyHigherExposure =
+                  route.comparison.exposureDeltaPercent !== null &&
+                  route.comparison.exposureDeltaPercent > 0;
                 const durationFormatted = formatDuration(route.durationSeconds);
                 const km = formatDistance(route.distanceMeters);
                 const exposureSaved =
@@ -749,6 +773,23 @@ function RoutePlannerContent() {
                     ? Math.abs(Math.round(route.comparison.exposureDeltaPercent))
                     : null;
                 const stationsCount = route.estimate?.stationsUsed?.length || 0;
+
+                // Tentukan subtitle rute yang presisi dan transparan
+                let routeSubtitle = '— Tercepat';
+                if (route.isFastest) {
+                  const otherRoutes = result.routes.filter((r) => r.id !== route.id);
+                  const isAlsoCleanest = otherRoutes.every(
+                    (r) =>
+                      r.estimate.exposureIndexPm25 === null ||
+                      (route.estimate.exposureIndexPm25 !== null &&
+                        route.estimate.exposureIndexPm25 <= r.estimate.exposureIndexPm25)
+                  );
+                  routeSubtitle = isAlsoCleanest ? '— Tercepat & Paling Bersih' : '— Tercepat';
+                } else if (isActuallyCleaner) {
+                  routeSubtitle = '— Alternatif Bersih';
+                } else {
+                  routeSubtitle = '— Alternatif Jalur';
+                }
 
                 return (
                   <button
@@ -767,11 +808,15 @@ function RoutePlannerContent() {
                       <div className="flex items-center gap-2">
                         <span
                           className={`w-2.5 h-2.5 rounded-full ${
-                            isCleanAir ? 'bg-emerald-500' : 'bg-blue-600'
+                            route.isFastest
+                              ? 'bg-blue-600'
+                              : isActuallyCleaner
+                              ? 'bg-emerald-500'
+                              : 'bg-slate-400'
                           }`}
                         />
                         <strong className="text-sm font-bold text-slate-800">
-                          Rute {route.label} {isCleanAir ? '— Alternatif Bersih' : '— Tercepat'}
+                          Rute {route.label} {routeSubtitle}
                         </strong>
                       </div>
                       {isRecommended && (
@@ -806,9 +851,14 @@ function RoutePlannerContent() {
                         <strong className="text-slate-800 font-bold whitespace-nowrap">
                           {route.estimate.exposureIndexPm25 ?? '-'} <small className="text-[10px]">µg/m³·mnt</small>
                         </strong>
-                        {exposureSaved != null && exposureSaved > 0 && isCleanAir && (
+                        {isActuallyCleaner && exposureSaved != null && exposureSaved > 0 && (
                           <span className="text-emerald-700 font-bold text-[11px] bg-emerald-100 px-1.5 py-0.5 rounded whitespace-nowrap">
                             ↓ {exposureSaved}% Lebih Bersih
+                          </span>
+                        )}
+                        {isActuallyHigherExposure && exposureSaved != null && exposureSaved > 0 && (
+                          <span className="text-amber-700 font-medium text-[11px] bg-amber-50 px-1.5 py-0.5 rounded whitespace-nowrap">
+                            ↑ {exposureSaved}% Lebih Tinggi
                           </span>
                         )}
                       </div>

@@ -102,6 +102,7 @@ export const AnalyzeRoutesRequestSchema = z.object({
     exposureWeight: 0.5,
     maxExtraTimePercent: 30,
   }),
+  transportMode: z.enum(['car', 'motorcycle', 'walk']).default('car').optional(),
 });
 export type AnalyzeRoutesRequestInput = z.infer<typeof AnalyzeRoutesRequestSchema>;
 

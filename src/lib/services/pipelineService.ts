@@ -25,6 +25,7 @@ export interface AnalyzePipelineInput {
   origin: { lat: number; lng: number };
   destination: { lat: number; lng: number };
   preferences: RoutePreferences;
+  transportMode?: 'car' | 'motorcycle' | 'walk';
   routes?: RouteCandidate[];
   stations?: StationData[];
 }
@@ -86,7 +87,7 @@ export async function runAnalysisPipeline(
   // 2. Dapatkan alternatif rute riil (OSRM Live dengan titik asal & tujuan sebenarnya)
   const candidateRoutes =
     input.routes ||
-    (await getRouteAlternatives(input.origin, input.destination));
+    (await getRouteAlternatives(input.origin, input.destination, input.transportMode || 'car'));
 
   // 3. Dapatkan data stasiun udara di sekitar koridor rute sebenarnya
   let stations = input.stations;

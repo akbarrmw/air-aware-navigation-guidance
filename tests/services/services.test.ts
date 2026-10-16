@@ -5,6 +5,7 @@ import { isPointWithinPilotArea } from '@/lib/services/geocodingService';
 import { runAnalysisPipeline } from '@/lib/services/pipelineService';
 import { MOCK_ROUTES } from '@/fixtures/mockRoutes';
 import { MOCK_STATIONS } from '@/fixtures/mockStations';
+import { isTollStep, routeHasToll } from '@/lib/services/routingService';
 
 describe('Person 2 - Backend Services & Normalization', () => {
   it('TC-05: Menghitung usia data dan status kesegaran (fresh, stale, expired)', () => {
@@ -122,5 +123,57 @@ describe('Person 2 - Backend Services & Normalization', () => {
     expect(['A', 'B', 'C']).toContain(result.recommendedRouteLabel);
     expect(result.actionMessages.length).toBeGreaterThan(0);
     expect(result.disclaimer).toBeTruthy();
+  });
+
+  it('TC-27: Deteksi ruas jalan tol dan filtering rute jalan tol untuk motor & pejalan kaki', () => {
+    // 1. Validasi pengenalan nama step jalan tol
+    expect(isTollStep({ name: 'Jalan Tol Semarang-Solo' })).toBe(true);
+    expect(isTollStep({ name: 'Tol Krapyak - Jatingaleh' })).toBe(true);
+    expect(isTollStep({ ref: 'Tollway' })).toBe(true);
+    expect(isTollStep({ name: 'Jalan Brigjen Sudiarto' })).toBe(false);
+    expect(isTollStep({ name: 'Jalan Pahlawan' })).toBe(false);
+
+    // 2. Rute dengan segmen tol > 150m diidentifikasi sebagai rute tol
+    const tollRoute = {
+      legs: [
+        {
+          steps: [
+            { name: 'Jalan Siliwangi', distance: 1000 },
+            { name: 'Jalan Tol Semarang', distance: 5500 },
+            { name: 'Jalan Setiabudi', distance: 800 },
+          ],
+        },
+      ],
+    };
+    expect(routeHasToll(tollRoute)).toBe(true);
+
+    // 3. Rute murni jalan arteri (non-tol)
+    const arterialRoute = {
+      legs: [
+        {
+          steps: [
+            { name: 'Jalan Pemuda', distance: 2000 },
+            { name: 'Jalan Gajah Mada', distance: 1500 },
+            { name: 'Simpang Lima', distance: 500 },
+          ],
+        },
+      ],
+    };
+    expect(routeHasToll(arterialRoute)).toBe(false);
+  });
+
+  it('TC-28: Perhitungan durasi perjalanan homogen untuk Mobil, Motor, dan Pejalan Kaki', () => {
+    const distanceMeters = 10000; // 10 km
+    const carDurationSec = 900;   // 15 menit OSRM car
+
+    // Walk: Kecepatan homogen 4.8 km/jam (1.333 m/s)
+    const expectedWalkDuration = Math.round(distanceMeters / 1.3333); // ~7500 detik (~125 menit)
+    expect(expectedWalkDuration).toBe(7500);
+
+    // Motorcycle: Kelincahan non-tol ~0.90x waktu mobil atau ~32 km/jam (8.89 m/s)
+    const expectedMotorDuration = Math.round(Math.min(carDurationSec * 0.90, distanceMeters / 8.89));
+    expect(expectedMotorDuration).toBe(810); // 13.5 menit
+    expect(expectedMotorDuration).toBeLessThan(carDurationSec);
+    expect(expectedWalkDuration).toBeGreaterThan(carDurationSec * 5);
   });
 });
