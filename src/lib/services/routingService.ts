@@ -92,7 +92,8 @@ export function routeHasToll(route: {
       }
     }
   }
-  return tollDistance > 150;
+  // Ambang batas 350 meter untuk menghindari false positive pada ramp akses pendek, underpass/flyover lokal OSM
+  return tollDistance > 350;
 }
 
 /**
@@ -108,8 +109,8 @@ async function fetchGuardedAlternativeRoute(
   mustAvoidToll: boolean = false,
   primaryHasToll: boolean = false
 ): Promise<RawRouteInput | null> {
-  // Hanya aktif untuk perjalanan perkotaan / sub-urban (1.5 km s/d 60 km)
-  if (directDistance < 1500 || directDistance > 60000) {
+  // Aktif untuk seluruh rentang perjalanan darat (300 m s/d 600 km)
+  if (directDistance < 300 || directDistance > 600000) {
     return null;
   }
 
@@ -119,7 +120,7 @@ async function fetchGuardedAlternativeRoute(
   const len = Math.sqrt(dLat * dLat + dLng * dLng);
   if (len === 0) return null;
 
-  const baseOffset = Math.min(len * 0.12, 0.015);
+  const baseOffset = Math.min(len * 0.12, 0.025);
   const normLat = -dLng / len;
   const normLng = dLat / len;
 
@@ -271,6 +272,10 @@ export async function getRouteAlternatives(
                 },
               },
             ];
+          } else {
+            // Pengaman fail-safe: jika rute non-tol tidak dapat diisolasi pada jaringan OSRM intercity,
+            // tetap sediakan rute jalan darat terbaik dan hitung estimasi durasi sesuai moda
+            validOsrmRoutes = [json.routes[0]];
           }
         }
 
