@@ -19,6 +19,7 @@ import {
   LocationIcon,
   HistoryIcon,
 } from '@/components/common/Icons';
+import { Leaf, Zap } from 'lucide-react';
 
 const ROUTES = {
   clean: {
@@ -272,12 +273,16 @@ export default function LandingPage() {
                     type="button"
                     onClick={() => setFocus(key)}
                     onMouseEnter={() => setFocus(key)}
-                    className={`rounded-lg py-1.5 text-xs font-bold transition ${
+                    className={`inline-flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-bold transition ${
                       (focus ?? 'clean') === key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                     }`}
                   >
-                    {key === 'clean' ? '🌿 ' : '⚡ '}
-                    {ROUTES[key].label}
+                    {key === 'clean' ? (
+                      <Leaf className="w-3.5 h-3.5 text-emerald-600 fill-current shrink-0" />
+                    ) : (
+                      <Zap className="w-3.5 h-3.5 text-amber-500 fill-current shrink-0" />
+                    )}
+                    <span>{ROUTES[key].label}</span>
                   </button>
                 ))}
               </div>

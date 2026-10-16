@@ -11,6 +11,7 @@ import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { RegisterForm } from '@/components/auth/RegisterForm';
+import { Leaf } from 'lucide-react';
 
 function AuthContent() {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
@@ -20,8 +21,8 @@ function AuthContent() {
       {/* Brand Header */}
       <div className="text-center mb-8">
         <Link href="/" className="inline-flex items-center gap-2 mb-4 group">
-          <span className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center font-black text-slate-950 text-xl shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition">
-            🌱
+          <span className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center font-black text-slate-950 shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition">
+            <Leaf className="w-5 h-5 text-slate-950 fill-current" />
           </span>
           <span className="font-extrabold text-2xl tracking-tight text-white">
             AANG
