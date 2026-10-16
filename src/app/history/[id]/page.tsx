@@ -10,7 +10,7 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
@@ -62,7 +62,7 @@ function getTransportModeBadge(mode?: 'car' | 'motorcycle' | 'walk') {
   }
 }
 
-export default function TripDetailPage() {
+function TripDetailContent() {
   const params = useParams();
   const router = useRouter();
   const tripId = typeof params?.id === 'string' ? params.id : '';
@@ -387,5 +387,22 @@ export default function TripDetailPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TripDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-6">
+          <div className="flex items-center gap-3 text-slate-400 text-sm">
+            <RotateCw className="w-5 h-5 animate-spin text-emerald-500" />
+            <span>Memuat rincian perjalanan...</span>
+          </div>
+        </div>
+      }
+    >
+      <TripDetailContent />
+    </Suspense>
   );
 }

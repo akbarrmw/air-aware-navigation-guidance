@@ -22,6 +22,8 @@ import {
   ShieldCheck,
   ExternalLink,
   Check,
+  LocateFixed,
+  RotateCw,
 } from 'lucide-react';
 import type { ApiResponse } from '@/types/api';
 import type { AnalyzeRoutesResponseData } from '@/types/analyze';
@@ -115,6 +117,7 @@ function RoutePlannerContent() {
   const [savingTrip, setSavingTrip] = useState(false);
   const [saveTripError, setSaveTripError] = useState<string | null>(null);
   const [showDetailsDrawer, setShowDetailsDrawer] = useState(false);
+  const [locatingOrigin, setLocatingOrigin] = useState(false);
 
   const originInputRef = useRef<HTMLInputElement>(null);
   const destInputRef = useRef<HTMLInputElement>(null);
@@ -127,6 +130,62 @@ function RoutePlannerContent() {
     setOriginCoord({ lat: item.lat, lng: item.lng });
     setOriginSuggestions([]);
     setActiveDropdown(null);
+  };
+
+  // Handler Deteksi Lokasi GPS Pengguna (One-shot) untuk Titik Keberangkatan
+  const handleUseCurrentLocation = () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      alert('Peramban Anda tidak mendukung deteksi lokasi (Geolocation).');
+      return;
+    }
+
+    setLocatingOrigin(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        let detectedLabel = `Lokasi Saat Ini (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+
+        try {
+          // Reverse geocoding via OpenStreetMap Nominatim untuk nama jalan/area yang informatif
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16`,
+            { headers: { 'User-Agent': 'EcoPulse-Hackathon-App/1.0 (contact@ecopulse.local)' } }
+          );
+          if (res.ok) {
+            const data = await res.json();
+            if (data.display_name) {
+              const parts = data.display_name.split(',');
+              detectedLabel = `Lokasi Saya: ${parts.slice(0, 2).map((p: string) => p.trim()).join(', ')}`;
+            }
+          }
+        } catch {
+          // Tetap gunakan koordinat numerik jika reverse geocode gagal
+        }
+
+        skipOriginSearchRef.current = true;
+        setOriginInput(detectedLabel);
+        setOriginCoord({ lat, lng });
+        setOriginSuggestions([]);
+        setActiveDropdown(null);
+        setLocatingOrigin(false);
+      },
+      (err) => {
+        setLocatingOrigin(false);
+        if (err.code === err.PERMISSION_DENIED) {
+          alert('Izin akses lokasi ditolak oleh peramban. Silakan izinkan akses lokasi pada pengaturan peramban Anda.');
+        } else if (err.code === err.TIMEOUT) {
+          alert('Waktu deteksi lokasi habis. Silakan coba kembali.');
+        } else {
+          alert(`Gagal mendeteksi lokasi: ${err.message}`);
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000,
+      }
+    );
   };
 
   // Handler Pemilihan Titik Tujuan dari Autocomplete
@@ -744,15 +803,56 @@ function RoutePlannerContent() {
                   onFocus={() => setActiveDropdown('origin')}
                   onClick={() => setActiveDropdown('origin')}
                   placeholder="Pilih titik keberangkatan..."
-                  className="w-full bg-slate-100 hover:bg-slate-100/80 focus:bg-white text-slate-800 text-xs font-medium px-3 py-2 rounded-lg border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition"
+                  className="w-full bg-slate-100 hover:bg-slate-100/80 focus:bg-white text-slate-800 text-xs font-medium pl-3 pr-8 py-2 rounded-lg border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition"
                 />
-                {searchingOrigin && (
-                  <span className="absolute right-2.5 top-2.5 w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                
+                {/* Shortcut GPS Button di dalam input */}
+                <button
+                  type="button"
+                  onClick={handleUseCurrentLocation}
+                  disabled={locatingOrigin}
+                  title="Gunakan lokasi saya saat ini"
+                  className="absolute right-2 top-2 p-1 text-slate-400 hover:text-emerald-600 rounded-md hover:bg-slate-200/60 transition disabled:opacity-50"
+                >
+                  {locatingOrigin ? (
+                    <RotateCw className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                  ) : (
+                    <LocateFixed className="w-3.5 h-3.5" />
+                  )}
+                </button>
+
+                {searchingOrigin && !locatingOrigin && (
+                  <span className="absolute right-8 top-2.5 w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                 )}
 
-                {/* Autocomplete Dropdown Origin (Hanya tampil saat activeDropdown === 'origin') */}
-                {activeDropdown === 'origin' && originSuggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-50 max-h-56 overflow-y-auto custom-scrollbar">
+                {/* Dropdown Titik Keberangkatan (Opsi Lokasi Saat Ini + Autocomplete) */}
+                {activeDropdown === 'origin' && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-50 max-h-64 overflow-y-auto custom-scrollbar">
+                    {/* OPSI 1: Gunakan Lokasi Saat Ini */}
+                    <button
+                      type="button"
+                      onClick={handleUseCurrentLocation}
+                      disabled={locatingOrigin}
+                      className="w-full text-left px-3.5 py-2.5 text-xs bg-emerald-50/60 hover:bg-emerald-100/70 border-b border-emerald-100/80 flex items-center gap-2.5 text-slate-800 transition group"
+                    >
+                      <div className="w-6 h-6 rounded-full bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition">
+                        {locatingOrigin ? (
+                          <RotateCw className="w-3.5 h-3.5 animate-spin text-emerald-600 group-hover:text-white" />
+                        ) : (
+                          <LocateFixed className="w-3.5 h-3.5" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <strong className="block text-emerald-800 font-bold truncate">
+                          {locatingOrigin ? 'Mendeteksi posisi GPS...' : 'Gunakan Lokasi Saat Ini'}
+                        </strong>
+                        <span className="block text-[11px] text-slate-500 truncate">
+                          Isi otomatis dari GPS perangkat Anda
+                        </span>
+                      </div>
+                    </button>
+
+                    {/* OPSI 2: Hasil Pencarian Autocomplete Geocoding */}
                     {originSuggestions.map((item, idx) => {
                       const parts = item.label.split(',');
                       const title = parts[0]?.trim() || item.label;
@@ -763,7 +863,7 @@ function RoutePlannerContent() {
                           key={idx}
                           type="button"
                           onClick={() => handleSelectOrigin(item)}
-                          className="w-full text-left px-3.5 py-2.5 text-xs hover:bg-emerald-50 border-b border-slate-100 last:border-none flex items-start gap-2.5 text-slate-700 transition"
+                          className="w-full text-left px-3.5 py-2.5 text-xs hover:bg-slate-50 border-b border-slate-100 last:border-none flex items-start gap-2.5 text-slate-700 transition"
                         >
                           <MapPin className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
                           <div className="min-w-0 flex-1">
@@ -775,6 +875,34 @@ function RoutePlannerContent() {
                         </button>
                       );
                     })}
+
+                    {/* OPSI 3: Lokasi Populer Semarang jika belum mengetik apa pun */}
+                    {originSuggestions.length === 0 && originInput.trim().length === 0 && (
+                      <div className="p-2 border-t border-slate-100">
+                        <span className="px-2 py-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase block">
+                          Lokasi Populer
+                        </span>
+                        <div className="space-y-0.5 mt-1">
+                          {POPULAR_LOCATIONS.slice(0, 4).map((loc, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => {
+                                skipOriginSearchRef.current = true;
+                                setOriginInput(loc.label);
+                                setOriginCoord({ lat: loc.lat, lng: loc.lng });
+                                setOriginSuggestions([]);
+                                setActiveDropdown(null);
+                              }}
+                              className="w-full text-left px-2.5 py-1.5 text-xs rounded-lg hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition"
+                            >
+                              <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                              <span className="truncate">{loc.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
