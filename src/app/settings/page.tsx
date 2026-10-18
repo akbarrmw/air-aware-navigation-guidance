@@ -169,7 +169,7 @@ export default function SettingsPage() {
     }
   };
 
-  // Hapus Akun Permanen (TC-23)
+  // Hapus Akun Permanen
   const handleDeleteAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     setDeleteError(null);
@@ -193,7 +193,7 @@ export default function SettingsPage() {
 
   if (authLoading || initialLoading) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-6">
+      <div className="w-full h-[calc(100vh-56px)] mt-[56px] flex items-center justify-center p-6 bg-slate-950">
         <div className="flex items-center gap-3 text-slate-400 text-sm">
           <RotateCw className="w-5 h-5 animate-spin text-emerald-500" />
           <span>Memuat pengaturan akun...</span>
@@ -203,7 +203,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+    <div className="w-full h-[calc(100vh-56px)] mt-[56px] overflow-y-auto custom-scrollbar bg-slate-950 p-4 sm:p-6 lg:p-8 pb-28 md:pb-16 text-slate-200">
+      <div className="max-w-4xl mx-auto">
       {/* Toast Notifikasi */}
       {successToast && (
         <div className="fixed top-20 right-6 z-50 p-4 bg-emerald-950/90 border border-emerald-500/60 rounded-2xl text-emerald-300 text-xs flex items-center gap-2 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-top-4">
@@ -346,8 +347,7 @@ export default function SettingsPage() {
                 </span>
                 <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                   Jika diaktifkan, rute yang Anda pilih akan disimpan ke dalam riwayat perjalanan
-                  pribadi Anda. Jika dinonaktifkan, server tidak akan menyimpan rekaman perjalanan baru
-                  (TC-19).
+                  pribadi Anda. Jika dinonaktifkan, server tidak akan menyimpan rekaman perjalanan baru.
                 </p>
                 {consentUpdatedAt && (
                   <span className="text-[10px] text-slate-500 block mt-2">
@@ -381,8 +381,7 @@ export default function SettingsPage() {
               </strong>
               <p>• Data koordinat polyline hanya disimpan untuk rute yang secara sadar Anda pilih.</p>
               <p>
-                • Kebijakan Retensi: Seluruh snapshot riwayat dibatasi 90 hari sesuai standar PRD
-                (K-P3.6).
+                • Kebijakan Retensi: Seluruh snapshot riwayat dibatasi 90 hari.
               </p>
               <p>• Data dienkapsulasi dengan Row-Level Security (RLS) dan tidak dapat dibaca oleh pengguna lain.</p>
             </div>
@@ -430,7 +429,7 @@ export default function SettingsPage() {
                   Hapus Akun AANG Permanen
                 </span>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Menghapus akun Anda beserta baris profil dan seluruh riwayat (Cascade Delete / TC-23).
+                  Menghapus akun Anda beserta baris profil dan seluruh riwayat.
                 </p>
               </div>
               <button
@@ -482,7 +481,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Modal 2: Konfirmasi Hapus Akun Permanen (Password Verification / TC-23) */}
+      {/* Modal 2: Konfirmasi Hapus Akun Permanen (Password Verification) */}
       {showDeleteAccountModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
@@ -490,7 +489,7 @@ export default function SettingsPage() {
               <UserX className="w-6 h-6" />
               <div>
                 <h3 className="font-bold text-white text-base">Hapus Akun AANG Permanen?</h3>
-                <p className="text-xs text-slate-400">Tindakan ini permanen dan berjenjang (TC-23).</p>
+                <p className="text-xs text-slate-400">Tindakan ini permanen dan berjenjang.</p>
               </div>
             </div>
 
@@ -543,6 +542,7 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

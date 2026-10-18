@@ -3,6 +3,9 @@
 > **"Pilih rute, kenali paparan."**  
 > Platform navigasi berbasis web yang membantu masyarakat perkotaan memperkirakan akumulasi paparan polusi udara ($PM_{2.5}$) selama perjalanan dan membandingkan alternatif rute berdasarkan *trade-off* antara waktu tempuh dan estimasi paparan lingkungan.
 
+🌐 **Live Deployment / Demo Aplikasi:**  
+👉 **[https://air-aware-navigation-guidance.vercel.app](https://air-aware-navigation-guidance.vercel.app)**
+
 ---
 
 ## 🚀 Cara Setup Lingkungan
@@ -104,7 +107,8 @@ Untuk keperluan demonstrasi, evaluasi fitur, dan pengujian riwayat perjalanan ta
 - **Beranda (`/`)**: Pengenalan platform, rangkuman kualitas udara kota, dan fitur unggulan.
 - **Perencana Rute (`/routes`)**: Input titik keberangkatan dan tujuan, pemilihan moda transportasi, pengaturan preferensi, serta komparasi rute alternatif A/B/C.
 - **Peta Kualitas Udara (`/map`)**: Visualisasi interaktif sebaran stasiun pemantau kualitas udara di seluruh Indonesia.
-- **Metodologi (`/methodology`)**: Dokumentasi ilmiah transparan mengenai rumus interpolasi IDW, perhitungan *Exposure Index*, dan *Confidence Level*.
+- **Riwayat Perjalanan (`/history`)**: Rekam jejak perjalanan tersimpan beserta metrik komparasi paparan polusi.
+- **Pengaturan & Privasi (`/settings`)**: Personalisasi bobot optimasi paparan vs waktu, preferensi, dan kontrol data pengguna.
 - **Autentikasi (`/login`)**: Formulir masuk dan registrasi pengguna baru.
 
 ---

@@ -104,6 +104,7 @@ function RoutePlannerContent() {
   const [savingTrip, setSavingTrip] = useState(false);
   const [saveTripError, setSaveTripError] = useState<string | null>(null);
   const [showDetailsDrawer, setShowDetailsDrawer] = useState(false);
+  const [mobilePanelCollapsed, setMobilePanelCollapsed] = useState(false);
   const [locatingOrigin, setLocatingOrigin] = useState(false);
   const [mapCenter, setMapCenter] = useState<[number, number] | undefined>(undefined);
   const [mapZoom, setMapZoom] = useState<number | undefined>(undefined);
@@ -497,7 +498,12 @@ function RoutePlannerContent() {
         setAppliedWaypoints(resolvedWaypoints);
         // Default pilih rute yang direkomendasikan sistem
         setSelectedRouteLabel(json.data.recommendedRouteLabel || json.data.routes[0]?.label || 'A');
-        setShowDetailsDrawer(true);
+        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+          setMobilePanelCollapsed(true);
+          setShowDetailsDrawer(false);
+        } else {
+          setShowDetailsDrawer(true);
+        }
         setSavedTrip(false);
         setSaveTripError(null);
       } else {
@@ -723,10 +729,29 @@ function RoutePlannerContent() {
         />
       </div>
 
-      {/* 2. Google Maps Style Floating Directions Sidebar Panel */}
-      <div className="absolute top-4 left-4 z-20 w-[420px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-5rem)] flex flex-col bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden">
+      {/* 2A. Google Maps Style Floating Directions Sidebar Panel */}
+      <div
+        className={`z-20 flex flex-col bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden transition-all duration-200 ${
+          mobilePanelCollapsed
+            ? 'hidden md:flex absolute top-4 left-4 w-[420px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-5rem)]'
+            : 'absolute top-2.5 sm:top-4 inset-x-2.5 sm:left-4 sm:right-auto sm:w-[420px] max-h-[calc(100vh-5.5rem)] flex'
+        }`}
+      >
+        {/* Mobile Header Bar when panel is open on mobile */}
+        <div className="flex md:hidden items-center justify-between px-3 py-2 bg-slate-100/90 border-b border-slate-200">
+          <span className="text-xs font-bold text-slate-800">Perencana Rute Navigasi</span>
+          <button
+            type="button"
+            onClick={() => setMobilePanelCollapsed(true)}
+            className="flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-emerald-700 shadow-xs"
+          >
+            <span>Lihat Peta</span>
+            <CloseIcon size={12} />
+          </button>
+        </div>
+
         {/* Mode Selector Tabs (Google Maps Style) */}
-        <div className="flex items-center justify-around border-b border-slate-200/80 bg-slate-50/70 py-2 px-3">
+        <div className="flex items-center justify-around border-b border-slate-200/80 bg-slate-50/70 py-1.5 sm:py-2 px-2 sm:px-3">
           <button
             onClick={() => handleTransportModeChange('car')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
@@ -1246,10 +1271,116 @@ function RoutePlannerContent() {
         </div>
       </div>
 
+      {/* 2B. Mobile Floating Top Pill when panel is collapsed */}
+      {mobilePanelCollapsed && (
+        <div className="md:hidden absolute top-2.5 inset-x-2.5 z-20 flex items-center justify-between gap-2 bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-200/90 shadow-lg">
+          <div className="min-w-0 flex-1 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+            <div className="truncate text-xs">
+              <strong className="text-slate-900 font-bold block truncate">
+                {originInput || 'Titik Asal'} → {destInput || 'Tujuan'}
+              </strong>
+              {result && (
+                <span className="text-[10px] text-slate-500 font-medium">
+                  {transportMode === 'motorcycle' ? 'Motor' : transportMode === 'walk' ? 'Pejalan' : 'Mobil'} • {result.routes.length} alternatif rute
+                </span>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setMobilePanelCollapsed(false)}
+            className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold shadow-xs flex items-center gap-1 shrink-0"
+          >
+            <span>Ubah</span>
+          </button>
+        </div>
+      )}
+
+      {/* 2C. Mobile Floating Route Preview Card when panel is collapsed and result exists */}
+      {mobilePanelCollapsed && result && activeRoute && !showDetailsDrawer && (
+        <div className="md:hidden absolute bottom-18 inset-x-2.5 z-20 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 p-3.5 animate-slide-down">
+          {/* Alternative Route Switcher Pills */}
+          <div className="flex items-center gap-1.5 mb-2.5 overflow-x-auto pb-1 custom-scrollbar">
+            {result.routes.map((r) => {
+              const isSel = r.label === selectedRouteLabel;
+              return (
+                <button
+                  key={r.id}
+                  onClick={() => setSelectedRouteLabel(r.label)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-bold border transition whitespace-nowrap flex items-center gap-1.5 ${
+                    isSel
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                      : 'bg-slate-100 text-slate-700 border-slate-200'
+                  }`}
+                >
+                  <span>Rute {r.label}</span>
+                  <span className="text-[10px] opacity-90">{formatDuration(r.durationSeconds)}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-base font-black text-slate-900">
+                  {formatDuration(activeRoute.durationSeconds)}
+                </span>
+                <span className="text-xs text-slate-500 font-medium">
+                  ({formatDistance(activeRoute.distanceMeters)})
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 line-clamp-1 mt-0.5">
+                {result.explanation?.text || 'Rute alternatif rendah polusi.'}
+              </p>
+            </div>
+
+            {activeRoute.comparison?.exposureDeltaPercent != null && (
+              <span
+                className={`px-2 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap ${
+                  activeRoute.comparison.exposureDeltaPercent < 0
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-slate-100 text-slate-700'
+                }`}
+              >
+                {activeRoute.comparison.exposureDeltaPercent < 0
+                  ? `↓ ${Math.abs(Math.round(activeRoute.comparison.exposureDeltaPercent))}% PM2.5`
+                  : 'Rute Acuan'}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setShowDetailsDrawer(true)}
+              className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold text-center transition"
+            >
+              Detail Rute &amp; Mitigasi
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (appliedOrigin && appliedDestination) {
+                  const url = `https://www.google.com/maps/dir/?api=1&origin=${appliedOrigin.lat},${appliedOrigin.lng}&destination=${appliedDestination.lat},${appliedDestination.lng}&travelmode=driving`;
+                  window.open(url, '_blank');
+                }
+              }}
+              className="p-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl text-slate-700 text-xs font-bold transition flex items-center justify-center"
+              title="Buka Google Maps"
+              aria-label="Google Maps"
+            >
+              <NavigationIcon size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 3. Google Maps Style Right Floating Route Details Panel */}
       {showDetailsDrawer && activeRoute && (
         <div className="absolute z-20 transition-all duration-300 animate-slide-down
-          bottom-4 left-4 right-4 max-h-[55vh]
+          bottom-18 left-2.5 right-2.5 max-h-[60vh]
           md:bottom-auto md:left-auto md:top-4 md:right-4 md:w-[420px] md:max-h-[calc(100vh-5rem)]
           bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 p-4 overflow-y-auto custom-scrollbar flex flex-col gap-3"
         >

@@ -4,6 +4,7 @@ import './globals.css';
 import { Suspense } from 'react';
 import { UserNav } from '@/components/common/UserNav';
 import { Navbar } from '@/components/common/Navbar';
+import { MobileBottomNav } from '@/components/common/MobileBottomNav';
 
 export const metadata: Metadata = {
   title: 'AANG — Air-Aware Navigation Guidance',
@@ -35,7 +36,7 @@ export default function RootLayout({
           {/* Google Maps Style Floating Topbar Header */}
           <header className="topbar">
             <Link href="/" className="brand group">
-              <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center p-0.5 shadow-sm border border-slate-200/80 group-hover:scale-105 transition overflow-hidden">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white flex items-center justify-center p-0.5 shadow-sm border border-slate-200/80 group-hover:scale-105 transition overflow-hidden shrink-0">
                 <img
                   src="/logo.png"
                   alt="Logo AANG"
@@ -44,7 +45,7 @@ export default function RootLayout({
               </div>
               <div className="brand-copy">
                 <span className="brand-name">AANG</span>
-                <span className="brand-mode">Air-Aware Navigation Guidance</span>
+                <span className="brand-mode hidden sm:inline-block">Air-Aware Navigation Guidance</span>
               </div>
             </Link>
 
@@ -53,7 +54,7 @@ export default function RootLayout({
               <Navbar />
             </Suspense>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="live-badge hidden sm:flex">
                 <span className="live-dot" />
                 <span className="font-semibold text-slate-700">Indonesia Live</span>
@@ -65,6 +66,11 @@ export default function RootLayout({
 
           {/* Main Map Viewport */}
           <main className="w-full h-full relative z-0">{children}</main>
+
+          {/* Floating Mobile Bottom Navigation Dock */}
+          <Suspense fallback={null}>
+            <MobileBottomNav />
+          </Suspense>
         </div>
       </body>
     </html>

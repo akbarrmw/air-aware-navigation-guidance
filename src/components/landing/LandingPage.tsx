@@ -132,7 +132,7 @@ export default function LandingPage() {
     let base = 1;
 
     const onResize = () => {
-      base = clamp(window.innerWidth / 1280, 0.55, 1.05);
+      base = clamp(window.innerWidth / 1280, 0.32, 1.05);
     };
     const onMove = (e: PointerEvent) => {
       if (reduce) return;
@@ -365,7 +365,7 @@ export default function LandingPage() {
           </div>
 
           {/* Petunjuk scroll */}
-          <div className="scroll-hint pointer-events-none absolute bottom-6 left-1/2 z-20 -translate-x-1/2 flex flex-col items-center gap-2 text-[11px] font-semibold text-slate-400">
+          <div className="scroll-hint pointer-events-none absolute bottom-16 sm:bottom-6 left-1/2 z-20 -translate-x-1/2 flex flex-col items-center gap-2 text-[11px] font-semibold text-slate-400">
             <span className="flex h-8 w-5 justify-center rounded-full border-2 border-slate-300 pt-1.5">
               <span className="scroll-wheel h-1.5 w-1 rounded-full bg-slate-400" />
             </span>
@@ -437,7 +437,7 @@ export default function LandingPage() {
       </section>
 
       {/* ================= CTA ================= */}
-      <section className="relative z-10 px-6 pb-16" aria-labelledby="cta-title">
+      <section className="relative z-10 px-6 pb-28 md:pb-16" aria-labelledby="cta-title">
         <div className="reveal mx-auto max-w-4xl rounded-[2rem] border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-teal-50 px-8 py-14 text-center shadow-sm">
           <h2 id="cta-title" className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
             Rute berikutnya, pilih yang lebih sehat.

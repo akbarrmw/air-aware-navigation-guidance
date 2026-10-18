@@ -97,13 +97,15 @@ export default function AirQualityMapPage() {
       return false;
     }) || AQI_CATEGORIES[0];
 
+  const [mobileListOpen, setMobileListOpen] = useState(false);
+
   return (
     <div className="relative w-full h-[calc(100vh-56px)] mt-[56px] overflow-hidden bg-slate-100">
       {/* Simulation Banner Notice if active */}
       {dataMode === 'simulation' && (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 bg-amber-500/90 backdrop-blur-md text-slate-950 font-bold px-4 py-1.5 rounded-full text-xs shadow-lg border border-amber-300 flex items-center gap-2">
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 bg-amber-500/90 backdrop-blur-md text-slate-950 font-bold px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[11px] sm:text-xs shadow-lg border border-amber-300 flex items-center gap-1.5 sm:gap-2 max-w-[calc(100vw-2rem)] truncate">
           <Zap className="w-3.5 h-3.5 fill-current shrink-0" />
-          <span>Mode Simulasi Aktif: Menampilkan data stasiun pemantau pengujian.</span>
+          <span className="truncate">Mode Simulasi Aktif: Data stasiun pemantau pengujian.</span>
         </div>
       )}
 
@@ -112,17 +114,68 @@ export default function AirQualityMapPage() {
         <NavigationMap
           stations={filteredStations}
           activeStationId={selectedStation?.stationId}
-          onSelectStation={(st) => setSelectedStation(st)}
+          onSelectStation={(st) => {
+            setSelectedStation(st);
+            setMobileListOpen(false);
+          }}
           center={selectedStation ? [selectedStation.lat, selectedStation.lng] : [-2.5, 118.0]}
           zoom={selectedStation ? 11 : 5}
         />
       </div>
 
-      {/* 2. Google Maps Style Floating Search & Station List Panel */}
-      <div className="absolute top-4 left-4 z-20 w-[400px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-5rem)] flex flex-col bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden">
-        {/* Search Bar */}
+      {/* 2A. Mobile-Only Compact Top Bar (Screens < md) */}
+      <div className="md:hidden absolute top-2.5 inset-x-2.5 z-20 flex items-center gap-2">
+        <div className="flex-1 flex items-center gap-2 bg-white/95 backdrop-blur-md rounded-xl px-3 py-2 shadow-lg border border-slate-200/90 focus-within:border-emerald-500 transition">
+          <SearchIcon size={15} />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Cari stasiun atau kota..."
+            className="w-full bg-transparent text-xs text-slate-800 placeholder-slate-400 outline-none font-medium"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="text-slate-400 hover:text-slate-600 p-0.5">
+              <CloseIcon size={14} />
+            </button>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setMobileListOpen(!mobileListOpen)}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold shadow-lg border transition whitespace-nowrap shrink-0 ${
+            mobileListOpen
+              ? 'bg-emerald-600 text-white border-emerald-600'
+              : 'bg-white/95 text-slate-700 border-slate-200/90 hover:bg-slate-50'
+          }`}
+          aria-label={mobileListOpen ? 'Tutup daftar stasiun' : 'Buka daftar stasiun'}
+        >
+          {mobileListOpen ? (
+            <>
+              <CloseIcon size={14} />
+              <span>Peta</span>
+            </>
+          ) : (
+            <>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Daftar ({filteredStations.length})</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* 2B. Desktop Sidebar OR Mobile Full Drawer when mobileListOpen is true */}
+      <div
+        className={`z-20 flex flex-col bg-white/95 backdrop-blur-md border border-slate-200/90 overflow-hidden transition-all duration-200 ${
+          mobileListOpen
+            ? 'fixed inset-x-2.5 top-14 bottom-20 rounded-2xl shadow-2xl flex md:hidden'
+            : 'hidden md:flex absolute top-4 left-4 w-[400px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-5rem)] rounded-2xl shadow-2xl'
+        }`}
+      >
+        {/* Search Bar (Desktop only, or Drawer Header on Mobile) */}
         <div className="p-3.5 border-b border-slate-200/80">
-          <div className="flex items-center gap-2 bg-slate-100 hover:bg-slate-100/80 focus-within:bg-white rounded-xl px-3 py-2 border border-slate-200 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 transition">
+          <div className="hidden md:flex items-center gap-2 bg-slate-100 hover:bg-slate-100/80 focus-within:bg-white rounded-xl px-3 py-2 border border-slate-200 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 transition">
             <SearchIcon size={16} />
             <input
               type="text"
@@ -138,8 +191,22 @@ export default function AirQualityMapPage() {
             )}
           </div>
 
+          {/* Mobile Drawer Header with Close action */}
+          <div className="flex md:hidden items-center justify-between mb-2">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">Stasiun Pemantau Udara</h2>
+              <span className="text-[11px] text-slate-500">{filteredStations.length} stasiun ditemukan</span>
+            </div>
+            <button
+              onClick={() => setMobileListOpen(false)}
+              className="px-3 py-1 rounded-lg bg-emerald-600 text-white font-bold text-xs"
+            >
+              Lihat di Peta
+            </button>
+          </div>
+
           {/* Filter Chips (Termasuk WAQI & Open-Meteo) */}
-          <div className="flex items-center gap-1.5 mt-2.5 overflow-x-auto pb-1 custom-scrollbar text-[11px]">
+          <div className="flex items-center gap-1.5 md:mt-2.5 overflow-x-auto pb-1 custom-scrollbar text-[11px]">
             <button
               onClick={() => setFilterCategory('all')}
               className={`px-2.5 py-1 rounded-full font-semibold border transition whitespace-nowrap flex-shrink-0 ${
@@ -214,7 +281,10 @@ export default function AirQualityMapPage() {
               return (
                 <button
                   key={st.stationId}
-                  onClick={() => setSelectedStation(st)}
+                  onClick={() => {
+                    setSelectedStation(st);
+                    setMobileListOpen(false);
+                  }}
                   className={`w-full text-left p-3 rounded-xl border transition flex items-center justify-between gap-2 ${
                     isSelected
                       ? 'border-emerald-500 bg-emerald-50/70 shadow-sm ring-1 ring-emerald-500/20'
@@ -260,8 +330,8 @@ export default function AirQualityMapPage() {
       </div>
 
       {/* 3. Floating Station Detail Card (Google Maps Place Info Style) */}
-      {selectedStation && (
-        <div className="absolute bottom-6 left-4 right-4 md:left-[430px] md:right-auto md:w-96 z-20 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 p-4 transition-all animate-slide-down">
+      {selectedStation && !mobileListOpen && (
+        <div className="absolute bottom-18 left-2.5 right-2.5 md:bottom-6 md:left-[430px] md:right-auto md:w-96 z-20 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 p-4 transition-all animate-slide-down">
           <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
             <div className="min-w-0 flex-1">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
@@ -275,13 +345,26 @@ export default function AirQualityMapPage() {
               </span>
             </div>
 
-            {/* Single Line Stable AQI Badge in Card Header */}
-            <div
-              className="px-3.5 py-1.5 rounded-xl text-white font-extrabold text-sm flex items-center gap-1.5 shadow-md whitespace-nowrap flex-shrink-0"
-              style={{ backgroundColor: activeCategory.color }}
-            >
-              <span className="text-[10px] uppercase font-bold tracking-wider opacity-90">AQI</span>
-              <span className="text-base font-black">{activeAqi}</span>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Single Line Stable AQI Badge in Card Header */}
+              <div
+                className="px-3 py-1.5 rounded-xl text-white font-extrabold text-sm flex items-center gap-1.5 shadow-md whitespace-nowrap"
+                style={{ backgroundColor: activeCategory.color }}
+              >
+                <span className="text-[10px] uppercase font-bold tracking-wider opacity-90">AQI</span>
+                <span className="text-base font-black">{activeAqi}</span>
+              </div>
+
+              {/* Close Button to Dismiss Detail Card */}
+              <button
+                type="button"
+                onClick={() => setSelectedStation(null)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+                aria-label="Tutup detail stasiun"
+                title="Tutup info stasiun"
+              >
+                <CloseIcon size={16} />
+              </button>
             </div>
           </div>
 
@@ -300,7 +383,7 @@ export default function AirQualityMapPage() {
           {/* Direct CTA: Rencanakan Rute ke Stasiun Ini */}
           <Link
             href={`/routes?destName=${encodeURIComponent(selectedStation.stationName)}&destLat=${selectedStation.lat}&destLng=${selectedStation.lng}`}
-            className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-sm transition"
+            className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-sm transition"
           >
             <NavigationIcon size={14} />
             <span>Rencanakan Rute Bersih ke Sini</span>
