@@ -137,8 +137,8 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="w-full h-[calc(100vh-56px)] mt-[56px] overflow-y-auto bg-slate-100 p-4 sm:p-6 lg:p-8">
-      <div className="max-w-5xl mx-auto pb-12">
+    <div className="w-full h-[calc(100vh-56px)] mt-[56px] overflow-y-auto custom-scrollbar bg-slate-100 p-4 sm:p-6 lg:p-8 pb-28 md:pb-12">
+      <div className="max-w-5xl mx-auto">
         {/* Privacy Consent Banner if Disabled */}
         {profile && (
           <ConsentBanner

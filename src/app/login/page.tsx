@@ -90,7 +90,7 @@ function AuthContent() {
 
 export default function LoginPage() {
   return (
-    <div className="w-full h-[calc(100vh-56px)] mt-[56px] overflow-y-auto bg-slate-100 flex items-center justify-center py-12 px-4 sm:px-6">
+    <div className="w-full h-[calc(100vh-56px)] mt-[56px] overflow-y-auto custom-scrollbar bg-slate-100 flex items-center justify-center pt-8 pb-28 md:py-12 px-4 sm:px-6">
       <Suspense
         fallback={
           <div className="text-slate-500 text-sm animate-pulse">
